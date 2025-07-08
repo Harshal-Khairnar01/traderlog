@@ -1,5 +1,3 @@
-
-// components/JournalTradeHistoryTable.js
 import React from 'react';
 
 export default function JournalTradeHistoryTable({ initialCapital, currentCapital, tradeHistory }) {
@@ -42,8 +40,8 @@ export default function JournalTradeHistoryTable({ initialCapital, currentCapita
                   {trade.direction}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{trade.quantity}</td>
-                <td className={`px-6 py-4 whitespace-nowrap text-sm font-bold ${trade.pnl >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                  {trade.pnl >= 0 ? '+' : ''}{trade.pnl}
+                <td className={`px-6 py-4 whitespace-nowrap text-sm font-bold ${trade.netPnl >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                  {trade.netPnl >= 0 ? '+' : ''}{trade.netPnl}
                 </td>
               </tr>
             ))}
