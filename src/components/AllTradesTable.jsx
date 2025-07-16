@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 
-// Modal Component (You can put this in a separate file, e.g., components/TradeDetailModal.jsx)
+// Modal Component
 const TradeDetailModal = ({ isOpen, onClose, title, content }) => {
   if (!isOpen) return null;
 
@@ -24,7 +24,7 @@ const TradeDetailModal = ({ isOpen, onClose, title, content }) => {
         <div className="text-right">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none"
           >
             Close
           </button>
@@ -34,7 +34,6 @@ const TradeDetailModal = ({ isOpen, onClose, title, content }) => {
   );
 };
 
-// AllTradesTable Component
 export default function AllTradesTable({ groupedTrades }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState({ title: "", content: "" });
@@ -46,14 +45,14 @@ export default function AllTradesTable({ groupedTrades }) {
 
   const closeModal = () => {
     setIsModalOpen(false);
-    setModalContent({ title: "", content: "" }); // Clear content on close
+    setModalContent({ title: "", content: "" });
   };
 
   return (
     <div className="bg-blue-50 p-6 rounded-lg shadow-inner overflow-x-auto">
       {Object.keys(groupedTrades).length > 0 ? (
-        <table className="min-w-full divide-y divide-gray-200 rounded-lg overflow-hidden">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-100">
             <tr>
               {[
                 "Date",
@@ -62,16 +61,15 @@ export default function AllTradesTable({ groupedTrades }) {
                 "Type",
                 "Direction",
                 "Qty",
-                "Entry Price",
-                "Exit Price",
-                "SL",
-                "Target",
+                "Risk:Reward",
+                "Target Points",
+                "SL Points",
                 "Exit Reason",
                 "Gross P&L",
                 "Net P&L",
                 "Charges",
                 "Strategy",
-                "Setup Name",
+                "Setup",
                 "Indicators",
                 "Confidence",
                 "Emotions Before",
@@ -83,7 +81,7 @@ export default function AllTradesTable({ groupedTrades }) {
               ].map((header) => (
                 <th
                   key={header}
-                  className="px-9 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase"
                 >
                   {header}
                 </th>
@@ -91,142 +89,80 @@ export default function AllTradesTable({ groupedTrades }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {Object.values(groupedTrades).map((group, groupIdx) => (
-              <React.Fragment key={groupIdx}>
-                {group.trades &&
-                  group.trades.map((trade) => (
-                    <tr key={trade.id} className={`${group.color}`}>
-                      <td className="px-4 py-1.5 text-sm text-gray-900 font-medium">
-                        {trade.date}
-                      </td>
-                      <td className="px-4 py-1.5 text-sm text-gray-500">
-                        {trade.time}
-                      </td>
-                      <td className="px-4 py-1.5 text-sm text-gray-500">
-                        {trade.instrument}
-                      </td>
-                      <td className="px-4 py-1.5 text-sm text-gray-500">
-                        {trade.tradeType}
-                      </td>
-                      <td
-                        className={`px-4 py-1.5 text-sm font-semibold ${
-                          trade.direction === "Buy"
-                            ? "text-green-600"
-                            : "text-red-600"
-                        }`}
-                      >
-                        {trade.direction}
-                      </td>
-                      <td className="px-4 py-1.5 text-sm text-gray-500">
-                        {trade.quantity}
-                      </td>
-                      <td className="px-4 py-1.5 text-sm text-gray-500">
-                        {trade.entryPrice}
-                      </td>
-                      <td className="px-4 py-1.5 text-sm text-gray-500">
-                        {trade.exitPrice}
-                      </td>
-                      <td className="px-4 py-1.5 text-sm text-gray-500">
-                        {trade.stopLoss}
-                      </td>
-                      <td className="px-4 py-1.5 text-sm text-gray-500">
-                        {trade.target}
-                      </td>
-                      <td className="px-4 py-1.5 text-sm text-gray-500">
-                        {trade.exitReason}
-                      </td>
-                      <td
-                        className={`px-4 py-1.5 text-sm font-bold ${
-                          trade.grossPnl >= 0
-                            ? "text-green-700"
-                            : "text-red-700"
-                        }`}
-                      >
-                        {trade.grossPnl >= 0 ? "+" : ""}
-                        {trade.grossPnl}
-                      </td>
-                      <td
-                        className={`px-4 py-1.5 text-sm font-bold ${
-                          trade.netPnl >= 0 ? "text-green-700" : "text-red-700"
-                        }`}
-                      >
-                        {trade.netPnl >= 0 ? "+" : ""}
-                        {trade.netPnl}
-                      </td>
-                      <td className="px-4 py-1.5 text-sm text-gray-500">
-                        {trade.charges}
-                      </td>
-                      <td className="px-4 py-1.5 text-sm text-gray-500">
-                        {trade.strategyUsed}
-                      </td>
-                      <td className="px-4 py-1.5 text-sm text-gray-500">
-                        {trade.setupName}
-                      </td>
-                      <td className="px-4 py-1.5 text-sm text-gray-500">
-                        {trade.confirmationIndicators}
-                      </td>
-                      <td className="px-4 py-1.5 text-sm text-gray-500">
-                        {trade.confidenceLevel}
-                      </td>
-                      <td className="px-4 py-1.5 text-sm text-gray-500">
-                        {trade.emotionsBefore}
-                      </td>
-                      <td className="px-4 py-1.5 text-sm text-gray-500">
-                        {trade.emotionsAfter}
-                      </td>
+            {Object.values(groupedTrades).map((group, idx) => (
+              <React.Fragment key={idx}>
+                {group.trades?.map((trade) => (
+                  <tr key={trade.id} className={group.color}>
+                    <td className="px-4 py-2 text-sm text-gray-900">{trade.date}</td>
+                    <td className="px-4 py-2 text-sm text-gray-500">{trade.time}</td>
+                    <td className="px-4 py-2 text-sm text-gray-500">{trade.instrument}</td>
+                    <td className="px-4 py-2 text-sm text-gray-500">{trade.tradeType}</td>
+                    <td
+                      className={`px-4 py-2 text-sm font-semibold ${
+                        trade.direction === "Buy" ? "text-green-600" : "text-red-600"
+                      }`}
+                    >
+                      {trade.direction}
+                    </td>
+                    <td className="px-4 py-2 text-sm text-gray-500">{trade.quantity}</td>
+                    <td className="px-4 py-2 text-sm text-gray-500">{trade.riskReward}</td>
+                    <td className="px-4 py-2 text-sm text-gray-500">{trade.targetPoints}</td>
+                    <td className="px-4 py-2 text-sm text-gray-500">{trade.stopLossPoints}</td>
+                    <td className="px-4 py-2 text-sm text-gray-500">{trade.exitReason}</td>
+                    <td
+                      className={`px-4 py-2 text-sm font-bold ${
+                        trade.grossPnl >= 0 ? "text-green-700" : "text-red-700"
+                      }`}
+                    >
+                      {trade.grossPnl >= 0 ? "+" : ""}
+                      {trade.grossPnl}
+                    </td>
+                    <td
+                      className={`px-4 py-2 text-sm font-bold ${
+                        trade.netPnl >= 0 ? "text-green-700" : "text-red-700"
+                      }`}
+                    >
+                      {trade.netPnl >= 0 ? "+" : ""}
+                      {trade.netPnl}
+                    </td>
+                    <td className="px-4 py-2 text-sm text-gray-500">{trade.charges}</td>
+                    <td className="px-4 py-2 text-sm text-gray-500">{trade.strategyUsed}</td>
+                    <td className="px-4 py-2 text-sm text-gray-500">{trade.setupName}</td>
+                    <td className="px-4 py-2 text-sm text-gray-500">{trade.confirmationIndicators}</td>
+                    <td className="px-4 py-2 text-sm text-gray-500">{trade.confidenceLevel}</td>
+                    <td className="px-4 py-2 text-sm text-gray-500">{trade.emotionsBefore}</td>
+                    <td className="px-4 py-2 text-sm text-gray-500">{trade.emotionsAfter}</td>
 
-                      {/* Notes (Clickable for modal) */}
-                      <td
-                        className="px-4 py-1.5 text-sm text-gray-500 w-24 max-w-[6rem] cursor-pointer hover:text-blue-600 hover:underline"
-                        onClick={() =>
-                          openModal("Trade Notes", trade.tradeNotes || "N/A")
-                        }
-                      >
-                        <div className="truncate">
-                          {trade.tradeNotes || "N/A"}
-                        </div>
-                      </td>
-
-                      {/* Mistakes (Clickable for modal) */}
-                      <td
-                        className="px-4 py-1.5 text-sm text-gray-500 w-24 max-w-[6rem] cursor-pointer hover:text-blue-600 hover:underline"
-                        onClick={() =>
-                          openModal("Mistakes Made", trade.mistakes || "N/A")
-                        }
-                      >
-                        <div className="truncate">
-                          {trade.mistakes || "N/A"}
-                        </div>
-                      </td>
-
-                      {/* Did Well (Clickable for modal) */}
-                      <td
-                        className="px-4 py-1.5 text-sm text-gray-500 w-24 max-w-[6rem] cursor-pointer hover:text-blue-600 hover:underline"
-                        onClick={() =>
-                          openModal("What Went Well", trade.whatDidWell || "N/A")
-                        }
-                      >
-                        <div className="truncate">
-                          {trade.whatDidWell || "N/A"}
-                        </div>
-                      </td>
-
-                      <td className="px-4 py-1.5 text-sm text-gray-500">
-                        {trade.tags}
-                      </td>
-                    </tr>
-                  ))}
+                    <td
+                      className="px-4 py-2 text-sm text-gray-500 max-w-[6rem] cursor-pointer hover:text-blue-600 hover:underline"
+                      onClick={() => openModal("Trade Notes", trade.tradeNotes || "N/A")}
+                    >
+                      <div className="truncate">{trade.tradeNotes || "N/A"}</div>
+                    </td>
+                    <td
+                      className="px-4 py-2 text-sm text-gray-500 max-w-[6rem] cursor-pointer hover:text-blue-600 hover:underline"
+                      onClick={() => openModal("Mistakes", trade.mistakes || "N/A")}
+                    >
+                      <div className="truncate">{trade.mistakes || "N/A"}</div>
+                    </td>
+                    <td
+                      className="px-4 py-2 text-sm text-gray-500 max-w-[6rem] cursor-pointer hover:text-blue-600 hover:underline"
+                      onClick={() => openModal("What Went Well", trade.whatDidWell || "N/A")}
+                    >
+                      <div className="truncate">{trade.whatDidWell || "N/A"}</div>
+                    </td>
+                    <td className="px-4 py-2 text-sm text-gray-500">{trade.tags}</td>
+                  </tr>
+                ))}
               </React.Fragment>
             ))}
           </tbody>
         </table>
       ) : (
-        <p className="text-gray-600 text-center py-4">
-          No trade history available.
-        </p>
+        <p className="text-gray-600 text-center py-4">No trade history available.</p>
       )}
 
-      {/* Render the Modal Component */}
+      {/* Modal */}
       <TradeDetailModal
         isOpen={isModalOpen}
         onClose={closeModal}
