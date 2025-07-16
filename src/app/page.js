@@ -11,20 +11,20 @@ export default function DashboardPage() {
   const [userNameLoaded, setUserNameLoaded] = useState(false);
   const [tradesLoaded, setTradesLoaded] = useState(false);
 
+  // Load user name and trade data from localStorage
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedUserName = localStorage.getItem("tradeJournalUserName");
-      if (savedUserName) {
-        setUserName(savedUserName);
-      }
+      if (savedUserName) setUserName(savedUserName);
       setUserNameLoaded(true);
 
       const savedTrades = localStorage.getItem("tradeJournalData");
       if (savedTrades) {
         try {
-          setTradeHistory(JSON.parse(savedTrades));
+          const parsed = JSON.parse(savedTrades);
+          setTradeHistory(parsed);
         } catch (error) {
-          console.error("Error parsing trade history from localStorage:", error);
+          console.error("Error parsing trade history:", error);
           setTradeHistory([]);
         }
       }
@@ -45,11 +45,35 @@ export default function DashboardPage() {
     setShowModal(false);
   };
 
-  const initialCapital = 50000;
-  const totalProfit = tradeHistory.reduce((sum, trade) => sum + Math.max(0, trade.pnl || 0), 0);
-  const totalLoss = tradeHistory.reduce((sum, trade) => sum + Math.min(0, trade.pnl || 0), 0);
-  const totalCharges = tradeHistory.reduce((sum, trade) => sum + (trade.charges || 0), 0);
-  const totalPnl = tradeHistory.reduce((sum, trade) => sum + (trade.pnl || 0), 0);
+  const initialCapital = 31000;
+
+  // Helper to safely get net P&L
+  const getNetPnl = (trade) => {
+    const net = Number(trade.netPnl);
+    const gross = Number(trade.grossPnl);
+    const charges = Number(trade.charges);
+
+    if (!isNaN(net)) return net;
+    if (!isNaN(gross) && !isNaN(charges)) return gross - charges;
+    return 0;
+  };
+
+  const totalProfit = tradeHistory.reduce((sum, trade) => {
+    const pnl = getNetPnl(trade);
+    return pnl > 0 ? sum + pnl : sum;
+  }, 0);
+
+  const totalLoss = tradeHistory.reduce((sum, trade) => {
+    const pnl = getNetPnl(trade);
+    return pnl < 0 ? sum + pnl : sum;
+  }, 0);
+
+  const totalCharges = tradeHistory.reduce(
+    (sum, trade) => sum + (Number(trade.charges) || 0),
+    0
+  );
+
+  const totalPnl = tradeHistory.reduce((sum, trade) => sum + getNetPnl(trade), 0);
 
   if (!userNameLoaded || !tradesLoaded) {
     return (
@@ -92,28 +116,42 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <div className="bg-zinc-700 p-4 rounded-lg shadow-md">
             <p className="text-lg font-medium text-white">Initial Capital:</p>
-            <p className="text-3xl font-bold text-gray-300">₹{initialCapital.toLocaleString()}</p>
+            <p className="text-3xl font-bold text-gray-300">
+              ₹{initialCapital.toLocaleString()}
+            </p>
           </div>
           <div className="bg-zinc-700 p-4 rounded-lg shadow-md">
             <p className="text-lg font-medium text-white">Total Trades:</p>
-            <p className="text-3xl font-bold text-gray-300">{tradeHistory.length}</p>
+            <p className="text-3xl font-bold text-gray-300">
+              {tradeHistory.length}
+            </p>
           </div>
           <div className="bg-zinc-700 p-4 rounded-lg shadow-md">
             <p className="text-lg font-medium text-white">Total Charges:</p>
-            <p className="text-3xl font-bold text-yellow-300">₹{totalCharges.toLocaleString()}</p>
+            <p className="text-3xl font-bold text-yellow-300">
+              ₹{totalCharges.toFixed(2)}
+            </p>
           </div>
           <div className="bg-zinc-700 p-4 rounded-lg shadow-md">
             <p className="text-lg font-medium text-white">Total Profit:</p>
-            <p className="text-3xl font-bold text-green-500">₹{totalProfit.toLocaleString()}</p>
+            <p className="text-3xl font-bold text-green-500">
+              ₹{totalProfit.toFixed(2)}
+            </p>
           </div>
           <div className="bg-zinc-700 p-4 rounded-lg shadow-md">
             <p className="text-lg font-medium text-white">Total Loss:</p>
-            <p className="text-3xl font-bold text-red-500">₹{totalLoss.toLocaleString()}</p>
+            <p className="text-3xl font-bold text-red-500">
+              ₹{totalLoss.toFixed(2)}
+            </p>
           </div>
           <div className="p-4 rounded-lg shadow-md bg-zinc-700">
             <p className="text-lg font-medium text-white">Total P&L (Net):</p>
-            <p className={`text-3xl font-bold ${totalPnl >= 0 ? "text-green-500" : "text-red-500"}`}>
-              ₹{totalPnl.toLocaleString()}
+            <p
+              className={`text-3xl font-bold ${
+                totalPnl >= 0 ? "text-green-500" : "text-red-500"
+              }`}
+            >
+              ₹{totalPnl.toFixed(2)}
             </p>
           </div>
         </div>
@@ -137,7 +175,9 @@ export default function DashboardPage() {
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
           <div className="bg-zinc-900 rounded-lg p-6 shadow-lg w-full max-w-sm">
-            <h2 className="text-xl font-semibold text-gray-100 mb-4">Enter Your Name</h2>
+            <h2 className="text-xl font-semibold text-gray-100 mb-4">
+              Enter Your Name
+            </h2>
             <input
               type="text"
               placeholder="Your name"

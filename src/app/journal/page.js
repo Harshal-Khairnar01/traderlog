@@ -24,14 +24,14 @@ export default function JournalPage() {
   }, [tradeHistory]);
 
   const addTrade = (newTrade) => {
-    const newId = tradeHistory.length > 0 ? Math.max(...tradeHistory.map(trade => trade.id)) + 1 : 1;
+    const newId = tradeHistory.length > 0 ? Math.max(...tradeHistory.map(trade => trade.id || 0)) + 1 : 1;
     setTradeHistory(prevHistory => [...prevHistory, { id: newId, ...newTrade }]);
   };
 
-  const initialCapital = 50000;
+  const initialCapital = 31000;
   let currentCapital = initialCapital;
   tradeHistory.forEach(trade => {
-    currentCapital += trade.pnl;
+    currentCapital += trade.netPnl ?? 0; // Use netPnl instead of pnl
   });
 
   return (
@@ -90,7 +90,9 @@ export default function JournalPage() {
           />
         ) : (
           <>
-            <h3 className="text-xl md:text-2xl font-bold text-gray-800 mt-8 mb-6">Trade Performance Analysis Charts</h3>
+            <h3 className="text-xl md:text-2xl font-bold text-gray-800 mt-8 mb-6">
+              Trade Performance Analysis Charts
+            </h3>
             <TradePerformanceCharts tradeHistory={tradeHistory} />
           </>
         )}
