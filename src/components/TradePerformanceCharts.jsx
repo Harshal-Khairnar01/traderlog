@@ -14,7 +14,6 @@ import {
   Line,
   Cell,
 } from "recharts";
-import TradeCalendar from "./TradeCalender";
 
 export default function TradePerformanceCharts({ tradeHistory }) {
   if (!Array.isArray(tradeHistory) || tradeHistory.length === 0) {
@@ -103,7 +102,6 @@ export default function TradePerformanceCharts({ tradeHistory }) {
 
   return (
     <div className="space-y-12">
-      <TradeCalendar tradeHistory={tradeHistory} />
       <div className="p-6 bg-zinc-50 rounded-lg shadow border border-zinc-200">
         <h3 className="text-xl font-semibold mb-4 text-slate-800">
           1. Emotion after trade vs Total P&L

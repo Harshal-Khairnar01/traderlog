@@ -26,6 +26,7 @@ export default function NewTradeEntryForm({ addTrade }) {
     emotionsAfter: "Satisfied",
     tradeNotes: "",
     mistakes: "",
+    mistakeChecklist: [],
     whatDidWell: "",
     tags: "",
   });
@@ -82,6 +83,7 @@ export default function NewTradeEntryForm({ addTrade }) {
         : Number(formData.grossPnl || 0) - Number(formData.charges || 0),
       charges: formData.charges ? Number(formData.charges) : null,
       confidenceLevel: Number(formData.confidenceLevel),
+      mistakeChecklist: formData.mistakeChecklist,
     };
 
     addTrade(tradeEntry);
@@ -109,6 +111,7 @@ export default function NewTradeEntryForm({ addTrade }) {
       emotionsAfter: "Satisfied",
       tradeNotes: "",
       mistakes: "",
+      mistakeChecklist: [],
       whatDidWell: "",
       tags: "",
     });
@@ -140,8 +143,8 @@ export default function NewTradeEntryForm({ addTrade }) {
           <FormField
             label="Symbol / Asset Name"
             id="instrument"
-            type="text"
-            placeholder="e.g., NIFTY"
+            type="select"
+            options={["NIFTY", "BANKNIFTY", "SENSEX"]}
             value={formData.instrument}
             onChange={handleChange}
           />
@@ -364,6 +367,45 @@ export default function NewTradeEntryForm({ addTrade }) {
             value={formData.mistakes}
             onChange={handleChange}
           />
+          {/* ✅ Mistake checklist row */}
+          <div>
+            <label className="block text-sm font-medium text-zinc-700 mb-2">
+              Common Mistakes (Select if any)
+            </label>
+            <div className="flex flex-wrap gap-4">
+              {[
+                "No SL",
+                "FOMO",
+                "Overtrade",
+                "Perfect",
+                "SL Slip",
+                "Ignore R:R",
+                "Greed",
+                "Fear",
+                "Not Follow SelfSetup",
+              ].map((mistake) => (
+                <label key={mistake} className="flex items-center space-x-2 text-sm text-gray-900">
+                  <input
+                    type="checkbox"
+                    value={mistake}
+                    checked={formData.mistakeChecklist.includes(mistake)}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      const value = e.target.value;
+                      setFormData((prev) => ({
+                        ...prev,
+                        mistakeChecklist: checked
+                          ? [...prev.mistakeChecklist, value]
+                          : prev.mistakeChecklist.filter((item) => item !== value),
+                      }));
+                    }}
+                  />
+                  <span>{mistake}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
           <FormField
             label="What I Did Well?"
             id="whatDidWell"
