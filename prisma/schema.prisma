@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String          @id @default(auto()) @map("_id") @db.ObjectId
+  name           String?
+  email          String          @unique
+  password       String
+  initialCapital Float           @default(0)
+  trades         Trade[]
+  capitalLogs    CapitalChange[]
+  createdAt      DateTime        @default(now())
+}
+
+model Trade {
+  id                     String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId                 String   @db.ObjectId
+  date                   DateTime
+  symbol                 String
+  tradeType              String
+  direction              String
+  quantity               Int
+  riskReward             Float
+  stopLossPts            Float
+  targetPts              Float
+  exitReason             String?
+  grossPnl               Float
+  netPnl                 Float
+  charges                Float?
+  strategyUsed           String?
+  setupName              String?
+  confirmationIndicators String?
+  confidenceLevel        Int?
+  emotionsBefore         String?
+  emotionsAfter          String?
+  notes                  String?
+  mistakes               String?
+  mistakeChecklist       String[] @default([])
+  tags                   String[] @default([])
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model CapitalChange {
+  id     String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId String   @db.ObjectId
+  amount Float
+  reason String?
+  date   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}

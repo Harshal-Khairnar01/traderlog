@@ -9,6 +9,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import CapitalTracker from "./CapitalTracker";
 
 const COLORS = [
   "#8884d8",
@@ -115,6 +116,9 @@ export default function TradePieCharts({ tradeHistory }) {
   const exitData = exitReasonData();
 
   return (
+    <>
+    
+    
     <div className="flex flex-col sm:flex-row flex-wrap justify-between gap-6">
       {mistakeData.length > 0 &&
         renderPieChart("Mistake Tags Frequency", mistakeData)}
@@ -125,5 +129,9 @@ export default function TradePieCharts({ tradeHistory }) {
       {exitData.length > 0 &&
         renderPieChart("Exit Reason Distribution", exitData)}
     </div>
+    <div>
+      <CapitalTracker/>
+    </div>
+      </>
   );
 }
