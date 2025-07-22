@@ -21,6 +21,13 @@ export const authOptions = {
           where: {
             email: credentials.email,
           },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            password: true,
+            initialCapital: true,
+          },
         });
         if (!user || !user.password) {
           throw new Error("Invalid Credentials!");
@@ -46,15 +53,25 @@ export const authOptions = {
     async session({ session, token }) {
       if (token) {
         session.user.id = token.id;
+        session.user.name = token.name;
+        session.user.email = token.email;
+        session.user.initialCapital = token.initialCapital;
       }
       return session;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         (token.id = user.id),
           (token.email = user.email),
           (token.name = user.name),
-          (token.image = user.image);
+          (token.initialCapital = user.initialCapital ?? 0);
+      }
+
+      if (trigger === "update" && session?.name) {
+        token.name = session.name;
+      }
+      if (trigger === "update" && session?.initialCapital !== undefined) {
+        token.initialCapital = session.initialCapital;
       }
       return token;
     },
