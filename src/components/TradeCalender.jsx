@@ -10,9 +10,12 @@ export default function TradeCalendar({ tradeHistory }) {
   const [selectedYear, setSelectedYear] = useState(currentYear);
 
   const getWeekStart = (date) => {
-    const day = date.getDay();
-    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-    return new Date(date.setDate(diff));
+    const copied = new Date(date.getTime());
+    const day = copied.getDay(); // 0 = Sunday, 1 = Monday, ...
+    const diff = (day === 0 ? -6 : 1) - day; // Monday as start
+    copied.setDate(copied.getDate() + diff);
+    copied.setHours(0, 0, 0, 0);
+    return copied;
   };
 
   const getWeeksOfYear = () => {
@@ -39,7 +42,7 @@ export default function TradeCalendar({ tradeHistory }) {
     const weekTrades = tradeHistory.filter(t => {
       const tDate = new Date(t.date);
       const end = new Date(start);
-      end.setDate(start.getDate() + 5);
+      end.setDate(start.getDate() + 4); // Only Mon–Fri
       return tDate >= start && tDate <= end;
     });
 
@@ -71,7 +74,9 @@ export default function TradeCalendar({ tradeHistory }) {
     return d.getFullYear() === selectedYear && d.getMonth() === parseInt(selectedMonth);
   });
   const monthlyTotalPnl = monthlyStats.reduce((acc, t) => acc + (t.netPnl || 0), 0);
-  const monthlyWinRate = monthlyStats.length ? (monthlyStats.filter(t => t.netPnl > 0).length / monthlyStats.length) * 100 : 0;
+  const monthlyWinRate = monthlyStats.length
+    ? (monthlyStats.filter(t => t.netPnl > 0).length / monthlyStats.length) * 100
+    : 0;
 
   return (
     <div className="border p-5 rounded-xl bg-white shadow-lg max-w-5xl mx-auto space-y-6">
@@ -84,7 +89,9 @@ export default function TradeCalendar({ tradeHistory }) {
             onChange={(e) => setSelectedMonth(e.target.value)}
           >
             {Array.from({ length: 12 }, (_, i) => (
-              <option key={i} value={i}>{new Date(0, i).toLocaleString('default', { month: 'long' })}</option>
+              <option key={i} value={i}>
+                {new Date(0, i).toLocaleString('default', { month: 'long' })}
+              </option>
             ))}
           </select>
 
