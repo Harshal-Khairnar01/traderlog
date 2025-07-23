@@ -29,14 +29,14 @@ const Modal = ({ children, onClose }) => {
   }, [onClose]);
 
   if (typeof window === "undefined") {
-    return null; // Don't render on the server
+    return null; 
   }
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div
         ref={modalRef}
-        // Removed max-h-[90vh] and overflow-y-auto to disable scrolling within the modal itself
+       
         className="relative bg-zinc-900 rounded-lg shadow-xl w-11/12 max-w-5xl"
       >
         <button
@@ -51,7 +51,7 @@ const Modal = ({ children, onClose }) => {
         </div>
       </div>
     </div>,
-    document.body // Append to the body
+    document.body 
   );
 };
 

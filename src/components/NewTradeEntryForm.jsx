@@ -1,18 +1,16 @@
-// components/NewTradeEntryForm.js
 "use client";
 
 import React, { useState, useEffect } from "react";
-import FormField from "./FormField"; // Assuming FormField is in the same directory
-import { toast } from "react-toastify"; // Import toast
+import FormField from "./FormField";
+import { toast } from "react-toastify";
 
 export default function NewTradeEntryForm({ addTrade, onClose }) {
   const [activeTab, setActiveTab] = useState("General");
   const [formData, setFormData] = useState({
-    // General Tab Fields
     marketType: "Indian",
     symbol: "",
     date: "",
-    time: "", // Added time field
+    time: "",
     entryPrice: "",
     quantity: "",
     totalAmount: "",
@@ -26,8 +24,6 @@ export default function NewTradeEntryForm({ addTrade, onClose }) {
     outcomeSummary: "Select Outcome Summary",
     tradeAnalysis: "",
 
-    // Psychology Tab Fields
-    confidenceLevel: "5",
     emotionsBefore: "Calm",
     emotionsAfter: "Satisfied",
     tradeNotes: "",
@@ -38,7 +34,6 @@ export default function NewTradeEntryForm({ addTrade, onClose }) {
     screenshotUpload: null,
   });
 
-  // Auto-calculate P&L Percentage
   useEffect(() => {
     const entry = parseFloat(formData.entryPrice);
     const exit = parseFloat(formData.exitPrice);
@@ -105,11 +100,11 @@ export default function NewTradeEntryForm({ addTrade, onClose }) {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const requiredFields = ["date", "time", "symbol", "quantity", "entryPrice"]; // Added 'time' to required fields
+    const requiredFields = ["date", "time", "symbol", "quantity", "entryPrice"];
     for (let field of requiredFields) {
       if (!formData[field]) {
         console.error(`Please fill in all required trade details: ${field}`);
-        toast.error(`Please fill in all required trade details: ${field}`); // Use toast.error
+        toast.error(`Please fill in all required trade details: ${field}`);
         return;
       }
     }
@@ -126,7 +121,6 @@ export default function NewTradeEntryForm({ addTrade, onClose }) {
         : null,
       stopLoss: formData.stopLoss ? Number(formData.stopLoss) : null,
       target: formData.target ? Number(formData.target) : null,
-      confidenceLevel: Number(formData.confidenceLevel),
       screenshotUpload: formData.screenshotUpload
         ? formData.screenshotUpload.name
         : null,
@@ -134,12 +128,11 @@ export default function NewTradeEntryForm({ addTrade, onClose }) {
 
     addTrade(tradeEntry);
 
-    // Reset form
     setFormData({
       marketType: "Indian",
       symbol: "",
       date: "",
-      time: "", // Reset time field
+      time: "",
       entryPrice: "",
       quantity: "",
       totalAmount: "",
@@ -152,7 +145,6 @@ export default function NewTradeEntryForm({ addTrade, onClose }) {
       strategy: "Select Strategy",
       outcomeSummary: "Select Outcome Summary",
       tradeAnalysis: "",
-      confidenceLevel: "5",
       emotionsBefore: "Calm",
       emotionsAfter: "Satisfied",
       tradeNotes: "",
@@ -163,7 +155,7 @@ export default function NewTradeEntryForm({ addTrade, onClose }) {
       screenshotUpload: null,
     });
 
-    toast.success("Trade submitted and added to history!"); // Use toast.success
+    toast.success("Trade submitted and added to history!");
     if (onClose) {
       onClose();
     }
@@ -174,7 +166,7 @@ export default function NewTradeEntryForm({ addTrade, onClose }) {
       marketType: "Indian",
       symbol: "",
       date: "",
-      time: "", // Reset time field
+      time: "",
       entryPrice: "",
       quantity: "",
       totalAmount: "",
@@ -187,7 +179,6 @@ export default function NewTradeEntryForm({ addTrade, onClose }) {
       strategy: "Select Strategy",
       outcomeSummary: "Select Outcome Summary",
       tradeAnalysis: "",
-      confidenceLevel: "5",
       emotionsBefore: "Calm",
       emotionsAfter: "Satisfied",
       tradeNotes: "",
@@ -197,12 +188,11 @@ export default function NewTradeEntryForm({ addTrade, onClose }) {
       tags: "",
       screenshotUpload: null,
     });
-    toast.info("Form reset!"); // Optional: Add a toast for reset
+    toast.info("Form reset!");
   };
 
   return (
     <div className="bg-zinc-800 rounded-lg shadow-xl text-white w-full h-[calc(100vh-80px)] flex flex-col">
-      {/* Header (fixed at top of this component) */}
       <div className="flex justify-between items-center px-6 py-3 border-b border-zinc-700">
         <h2 className="text-xl font-semibold text-gray-100">Add New Trade</h2>
         {onClose && (
@@ -216,7 +206,6 @@ export default function NewTradeEntryForm({ addTrade, onClose }) {
         )}
       </div>
 
-      {/* Tabs (fixed below header) */}
       <div className="flex border-b border-zinc-700 px-6 py-2">
         <button
           className={`px-4 py-2 text-sm font-medium ${
@@ -240,7 +229,6 @@ export default function NewTradeEntryForm({ addTrade, onClose }) {
         </button>
       </div>
 
-      {/* Scrollable Form Content */}
       <form
         className="flex-grow space-y-6 px-6 py-2 overflow-y-auto scrollbar scrollbar-thumb-zinc-600 scrollbar-track-zinc-700 scrollbar-w-2"
         onSubmit={handleSubmit}
@@ -271,16 +259,14 @@ export default function NewTradeEntryForm({ addTrade, onClose }) {
               value={formData.date}
               onChange={handleChange}
             />
-            {/* New Time Field */}
             <FormField
               label="Time"
               id="time"
-              type="time" // Set type to "time"
+              type="time"
               placeholder="HH:MM"
               value={formData.time}
               onChange={handleChange}
             />
-            {/* Entry Price, Quantity, Total Amount, Exit Price in one row */}
             <div className="col-span-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <FormField
                 label="Entry Price"
@@ -321,8 +307,6 @@ export default function NewTradeEntryForm({ addTrade, onClose }) {
               />
             </div>
 
-            {/* P&L Amount, P&L (%), Direction, Stop Loss, and Target in one row */}
-            {/* Using col-span-full to ensure it spans the whole width of the outer grid */}
             <div className="col-span-full grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4">
               <div className="flex gap-2">
                 <FormField
@@ -343,16 +327,11 @@ export default function NewTradeEntryForm({ addTrade, onClose }) {
                   onChange={handleChange}
                 />
               </div>
-              {/* Direction buttons - we need to make this section behave like a single grid item */}
               <div className="col-span-1">
-                {" "}
-                {/* This div occupies one column in the parent grid */}
                 <label className="block text-sm font-medium text-gray-400 mb-2">
                   Direction
                 </label>
                 <div className="flex space-x-2 sm:space-x-4">
-                  {" "}
-                  {/* Adjusted spacing for responsiveness */}
                   <button
                     type="button"
                     className={`px-4 py-2 rounded-md font-semibold text-sm transition-colors duration-200 w-1/2 ${
@@ -417,7 +396,6 @@ export default function NewTradeEntryForm({ addTrade, onClose }) {
               </div>
             </div>
 
-            {/* Strategy and Outcome Summary in one row */}
             <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 label="Strategy"
@@ -616,7 +594,6 @@ export default function NewTradeEntryForm({ addTrade, onClose }) {
         )}
       </form>
 
-      {/* Fixed Footer with Buttons */}
       <div className="flex justify-end space-x-4 pt-6 pb-4 px-6 border-t border-zinc-700 bg-zinc-800">
         <button
           type="button"

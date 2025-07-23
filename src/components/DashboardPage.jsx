@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-// Import Recharts components
 import {
   LineChart,
   Line,
@@ -14,18 +13,15 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-// Assuming LeftSidebar component is in components/LeftSidebar.jsx
-// import LeftSidebar from '../components/LeftSidebar'; // Make sure this import path is correct if you're using it
-
-import NewTradeEntryForm from "./NewTradeEntryForm"; // Import the NewTradeEntryForm
-import Modal from "./Modal"; // Assuming you will create a Modal component
+import NewTradeEntryForm from "./NewTradeEntryForm";
+import Modal from "./Modal";
 
 const DashboardPage = ({ session }) => {
   const [tradeHistory, setTradeHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
-  const [showNewTradeModal, setShowNewTradeModal] = useState(false); // State for modal
+  const [showNewTradeModal, setShowNewTradeModal] = useState(false);
 
   const userName = session?.user?.name || "Guest";
   const userInitial = userName.charAt(0).toUpperCase();
@@ -37,11 +33,25 @@ const DashboardPage = ({ session }) => {
       : await response.text();
   };
 
+  const calculateGrossPnl = (trade) => {
+    if (trade.entryPrice && trade.exitPrice && trade.quantity) {
+      if (trade.direction === "Long") {
+        return (trade.exitPrice - trade.entryPrice) * trade.quantity;
+      } else if (trade.direction === "Short") {
+        return (trade.entryPrice - trade.exitPrice) * trade.quantity;
+      }
+    }
+    return 0;
+  };
+
+  const getTradeCharges = (trade) => {
+    return trade.charges ?? 0;
+  };
+
   const fetchDashboardData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
-    // Attempt to load from localStorage first
     try {
       if (typeof window !== "undefined" && window.localStorage) {
         const storedData = localStorage.getItem("tradeJournalData");
@@ -49,27 +59,20 @@ const DashboardPage = ({ session }) => {
           const data = JSON.parse(storedData);
           const processedTrades = data.map((trade) => ({
             ...trade,
-            // Convert date and time to a single Date object for proper sorting/charting
             dateTime: new Date(`${trade.date}T${trade.time}`),
-            // *** CHANGE HERE: Prioritize pnlAmount, fall back to netPnl, then 0 ***
             pnlAmount: parseFloat(trade.pnlAmount || trade.netPnl || 0),
-            grossPnl: parseFloat(trade.grossPnl || 0), // Assuming grossPnl is still relevant
-            charges: parseFloat(trade.charges || 0),
+            grossPnl: calculateGrossPnl(trade),
+            charges: getTradeCharges(trade),
           }));
           setTradeHistory(processedTrades);
           setIsLoading(false);
-          return; // Exit if data is found in localStorage
+          return;
         }
       }
     } catch (err) {
-      console.warn(
-        "Failed to load trade data from local storage, attempting API:",
-        err
-      );
-      // Do not set error here, just log and proceed to API fetch
+      console.warn("Failed to load trade data from local storage, attempting API:", err);
     }
 
-    // Fallback to API fetch if no data in localStorage or an error occurred with localStorage
     if (!session?.user?.id) {
       setError("User not authenticated. Please log in again.");
       setIsLoading(false);
@@ -89,19 +92,15 @@ const DashboardPage = ({ session }) => {
       }
 
       const data = await res.json();
-      // Ensure pnlAmount, grossPnl, charges are treated as numbers, and add dateTime
       const processedTrades = data.tradeHistory.map((trade) => ({
         ...trade,
         dateTime: new Date(`${trade.date}T${trade.time}`),
-        // *** CHANGE HERE: Prioritize pnlAmount, fall back to netPnl, then 0 ***
         pnlAmount: parseFloat(trade.pnlAmount || trade.netPnl || 0),
-        grossPnl: parseFloat(trade.grossPnl || 0), // Assuming grossPnl is still relevant
-        charges: parseFloat(trade.charges || 0),
+        grossPnl: calculateGrossPnl(trade),
+        charges: getTradeCharges(trade),
       }));
       setTradeHistory(processedTrades);
-      // Store in localStorage if fetched from API
       if (typeof window !== "undefined" && window.localStorage) {
-        // Store the original tradeHistory from API response, as processing happens on load
         localStorage.setItem("tradeJournalData", JSON.stringify(data.tradeHistory));
       }
     } catch (err) {
@@ -116,19 +115,15 @@ const DashboardPage = ({ session }) => {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  // Function to add a new trade (will be passed to the form)
   const addTrade = useCallback(async (newTrade) => {
     try {
-      // Optimistically update UI
       setTradeHistory((prev) => {
-        // Ensure the newTrade also has pnlAmount correctly parsed
         const processedNewTrade = {
           ...newTrade,
           dateTime: new Date(`${newTrade.date}T${newTrade.time}`),
-          // *** CHANGE HERE: Ensure pnlAmount is parsed for new trades ***
           pnlAmount: parseFloat(newTrade.pnlAmount || newTrade.netPnl || 0),
-          grossPnl: parseFloat(newTrade.grossPnl || 0),
-          charges: parseFloat(newTrade.charges || 0),
+          grossPnl: calculateGrossPnl(newTrade),
+          charges: getTradeCharges(newTrade),
         };
         const updatedHistory = [...prev, processedNewTrade];
         if (typeof window !== "undefined" && window.localStorage) {
@@ -136,7 +131,7 @@ const DashboardPage = ({ session }) => {
         }
         return updatedHistory;
       });
-      setShowNewTradeModal(false); // Close modal on successful addition
+      setShowNewTradeModal(false);
 
       const res = await fetch("/api/v1/trades", {
         method: "POST",
@@ -155,29 +150,23 @@ const DashboardPage = ({ session }) => {
         throw new Error(errorMessage || res.statusText);
       }
 
-      // Re-fetch data to ensure consistency with backend (or update with response data)
       fetchDashboardData();
-
     } catch (err) {
       console.error("Failed to add new trade:", err);
       setError(err.message || "Failed to add new trade.");
-      // Rollback UI if optimistic update was done and API call failed
-      fetchDashboardData(); // Re-fetch to revert to actual state
+      fetchDashboardData();
     }
   }, [fetchDashboardData]);
 
-
-  // --- Calculations for Dashboard Statistics ---
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
 
   const monthlyTrades = useMemo(() => {
     return tradeHistory.filter((t) => {
-      const tradeDate = new Date(t.date); // Use original date string for month/year filter
-      // Ensure date parsing is robust, especially for 'YYYY-MM-DD' format
+      const tradeDate = new Date(t.date);
       if (isNaN(tradeDate.getTime())) {
         console.warn("Invalid trade date found:", t.date);
-        return false; // Skip invalid dates
+        return false;
       }
       return (
         tradeDate.getMonth() === currentMonth &&
@@ -188,7 +177,6 @@ const DashboardPage = ({ session }) => {
 
   const highestPnl = useMemo(() => {
     if (tradeHistory.length === 0) return 0;
-    // *** CHANGE HERE: Use pnlAmount for highestPnl ***
     const allPnls = tradeHistory.map((t) => t.pnlAmount);
     return Math.max(...allPnls);
   }, [tradeHistory]);
@@ -198,16 +186,13 @@ const DashboardPage = ({ session }) => {
 
   const winRate = useMemo(() => {
     if (monthlyTrades.length === 0) return 0;
-    // *** CHANGE HERE: Use pnlAmount for winRate ***
     const winningTrades = monthlyTrades.filter((t) => t.pnlAmount > 0).length;
     return (winningTrades / monthlyTrades.length) * 100;
   }, [monthlyTrades]);
 
   const avgRiskReward = useMemo(() => {
     if (monthlyTrades.length === 0) return "N/A";
-    // *** CHANGE HERE: Use pnlAmount for avgRiskReward ***
     const positiveTrades = monthlyTrades.filter((t) => t.pnlAmount > 0);
-    // *** CHANGE HERE: Use pnlAmount for avgRiskReward ***
     const negativeTrades = monthlyTrades.filter((t) => t.pnlAmount < 0);
 
     const avgWinPnl =
@@ -224,22 +209,19 @@ const DashboardPage = ({ session }) => {
     if (avgWinPnl > 0 && avgLossPnl < 0) {
       return `${(avgWinPnl / Math.abs(avgLossPnl)).toFixed(2)}:1`;
     } else if (avgWinPnl > 0) {
-      return "Wins Only"; // All trades were positive, no risk to reward
+      return "Wins Only";
     } else if (avgLossPnl < 0) {
-      return "Losses Only"; // All trades were negative, no reward to risk
+      return "Losses Only";
     } else {
-      return "0:0"; // No positive or negative trades
+      return "0:0";
     }
   }, [monthlyTrades]);
 
-  // Confidence Index Placeholder - You'll need actual logic to calculate this
-  const confidenceIndex = 0.65; // Example: 0.0 to 1.0 (Low to High)
+  const confidenceIndex = 0.65;
 
-  // --- Cumulative P&L Calculation for Chart ---
   const cumulativePnlData = useMemo(() => {
     if (tradeHistory.length === 0) return [];
 
-    // Sort trades by the new dateTime property to ensure correct chronological order
     const sortedTrades = [...tradeHistory].sort(
       (a, b) => a.dateTime.getTime() - b.dateTime.getTime()
     );
@@ -248,11 +230,9 @@ const DashboardPage = ({ session }) => {
     const data = [];
 
     sortedTrades.forEach((trade) => {
-      // *** CHANGE HERE: Use pnlAmount for cumulative P&L ***
       cumulativeSum += trade.pnlAmount;
       data.push({
-        // Use a combined date/time string or just date for X-axis
-        name: `${trade.date} ${trade.time}`, // Recharts often uses 'name' for X-axis labels
+        name: `${trade.date} ${trade.time}`,
         pnl: cumulativeSum,
       });
     });
@@ -285,7 +265,7 @@ const DashboardPage = ({ session }) => {
           </select>
           <div className=" flex items-center gap-5">
             <button
-              onClick={() => setShowNewTradeModal(true)} // Open modal on click
+              onClick={() => setShowNewTradeModal(true)}
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1.5 px-3 rounded-md text-sm flex items-center gap-1"
             >
               <svg
@@ -305,7 +285,6 @@ const DashboardPage = ({ session }) => {
               New Trade
             </button>
 
-            {/* User Profile Dropdown */}
             <button
               onClick={() => setShowProfileDropdown(!showProfileDropdown)}
               className="w-9 h-9 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-base hover:bg-purple-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50"
@@ -337,47 +316,35 @@ const DashboardPage = ({ session }) => {
         </div>
       </div>
 
-      {/* Main Content Area */}
       <div className="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Sidebar / Navigation (as per original image, but not implemented in this component) */}
-        {/*
-          If you have a LeftSidebar component, uncomment this and make sure
-          it's correctly imported and placed within your layout.
-          <LeftSidebar />
-        */}
-
-        {/* Dashboard Main Panel */}
         <div className="lg:col-span-3">
           {" "}
-          {/* This div now spans all columns */}
-          {/* Top Row Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <DashboardCard
               title="Higest P&L"
               value={`₹${highestPnl.toLocaleString("en-IN")}`}
               valueColor={highestPnl >= 0 ? "text-green-400" : "text-red-400"}
-              change="+" // Placeholder for change vs last month
+              change="+"
             />
             <DashboardCard
               title="Win Rate"
               value={`${winRate.toFixed(1)}%`}
               valueColor="text-blue-400"
-              change="+" // Placeholder for change vs last month
+              change="+"
             />
             <DashboardCard
               title="Avg. Risk/Reward"
               value={avgRiskReward}
               valueColor="text-yellow-400"
-              change="-" // Placeholder for change vs last month
+              change="-"
             />
             <DashboardCard
               title="Trades This Month"
               value={tradesThisMonthCount}
               valueColor="text-purple-400"
-              change="+" // Placeholder for change vs last month
+              change="+"
             />
           </div>
-          {/* Confidence Index */}
           <div className="bg-slate-800 p-6 rounded-lg shadow-md mb-6">
             <h3 className="text-lg font-semibold text-gray-200 mb-4">
               Confidence Index
@@ -387,7 +354,6 @@ const DashboardPage = ({ session }) => {
                 className="absolute h-full bg-blue-500 rounded-full transition-all duration-500 ease-out"
                 style={{ width: `${confidenceIndex * 100}%` }}
               ></div>
-              {/* Marker for current confidence */}
               <div
                 className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-blue-500 rounded-full"
                 style={{ left: `calc(${confidenceIndex * 100}% - 8px)` }}
@@ -402,9 +368,7 @@ const DashboardPage = ({ session }) => {
               <span>High</span>
             </div>
           </div>
-          {/* Cumulative P&L and Top Trades */}
           <div className="flex md:flex-row flex-col gap-6">
-            {/* Cumulative P&L Section with Chart */}
             <div className=" w-3/4 bg-slate-800 p-6 rounded-lg shadow-md min-h-[400px] flex flex-col">
               <h3 className="text-lg font-semibold text-gray-200 mb-4">
                 Cumulative P&L
@@ -416,8 +380,7 @@ const DashboardPage = ({ session }) => {
                       data={cumulativePnlData}
                       margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#4a5568" />{" "}
-                      {/* Darker grid */}
+                      <CartesianGrid strokeDasharray="3 3" stroke="#4a5568" />
                       <XAxis
                         dataKey="name"
                         stroke="#cbd5e0"
@@ -442,19 +405,18 @@ const DashboardPage = ({ session }) => {
                       <Line
                         type="monotone"
                         dataKey="pnl"
-                        stroke="#8884d8" // A distinct color for the line
+                        stroke="#8884d8"
                         strokeWidth={2}
-                        dot={false} // Remove individual dots for a cleaner line
+                        dot={false}
                         activeDot={{
                           r: 8,
                           fill: "#8884d8",
                           stroke: "#fff",
                           strokeWidth: 2,
-                        }} // Active dot on hover
+                        }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
-                  {/* Total Cumulative P&L for display below the chart */}
                   <p className="text-xl font-bold mt-4 text-center">
                     Current Total:{" "}
                     <span
@@ -480,7 +442,6 @@ const DashboardPage = ({ session }) => {
               )}
             </div>
 
-            {/* Top Trades Placeholder */}
             <div className=" w-1/4 bg-slate-800 p-6 rounded-lg shadow-md min-h-[300px] flex flex-col justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-gray-200 mb-4 flex justify-between items-center">
@@ -493,10 +454,8 @@ const DashboardPage = ({ session }) => {
                   </Link>
                 </h3>
                 <div className="space-y-3">
-                  {/* Example Top Trade (replace with actual data) */}
                   {monthlyTrades
                     .slice()
-                    // *** CHANGE HERE: Sort by pnlAmount ***
                     .sort((a, b) => b.pnlAmount - a.pnlAmount)
                     .slice(0, 3)
                     .map((trade, index) => (
@@ -514,13 +473,11 @@ const DashboardPage = ({ session }) => {
                         </div>
                         <p
                           className={`font-semibold ${
-                            // *** CHANGE HERE: Check pnlAmount for color ***
                             trade.pnlAmount >= 0
                               ? "text-green-400"
                               : "text-red-400"
                           }`}
                         >
-                          {/* *** CHANGE HERE: Display pnlAmount *** */}
                           ₹{trade.pnlAmount.toLocaleString("en-IN")}
                         </p>
                       </div>
@@ -537,10 +494,8 @@ const DashboardPage = ({ session }) => {
         </div>
       </div>
 
-      {/* New Trade Modal */}
       {showNewTradeModal && (
         <Modal onClose={() => setShowNewTradeModal(false)}>
-          {/* Make sure NewTradeEntryForm itself handles pnlAmount correctly */}
           <NewTradeEntryForm addTrade={addTrade} />
         </Modal>
       )}
@@ -548,11 +503,9 @@ const DashboardPage = ({ session }) => {
   );
 };
 
-// Reusable Dashboard Card component (no changes needed here as it uses `value` prop)
 const DashboardCard = ({ title, value, valueColor, change }) => (
   <div className="bg-slate-800 p-5 rounded-lg shadow-xl flex flex-col items-start justify-between relative overflow-hidden">
     <div className="absolute top-0 right-0 p-3">
-      {/* Icon Placeholder - You can replace these with actual SVG icons */}
       {title === "Higest P&L" && (
         <span className="text-green-500 text-2xl">📈</span>
       )}
@@ -568,14 +521,12 @@ const DashboardCard = ({ title, value, valueColor, change }) => (
     </div>
     <p className="text-sm text-gray-400 font-medium mb-1">{title}</p>
     <p className={`text-3xl font-bold ${valueColor}`}>{value}</p>
-    {/* Placeholder for change vs last month */}
     <p
       className={`text-xs ${
         change === "+" ? "text-green-400" : "text-red-400"
       } mt-2`}
     >
       {change}10% vs last month{" "}
-      {/* This is a static placeholder. Needs actual calc. */}
     </p>
   </div>
 );
