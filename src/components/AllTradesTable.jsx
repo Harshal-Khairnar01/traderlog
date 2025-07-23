@@ -57,26 +57,27 @@ export default function AllTradesTable({ groupedTrades }) {
               {[
                 "Date",
                 "Time",
-                "Symbol",
-                "Type",
+                "Symbol", // Changed from "Instrument" to "Symbol"
+                // "Type", // Removed 'Type' as it's not in the new data structure
                 "Direction",
                 "Qty",
-                "Risk:Reward",
-                "Target Points",
-                "SL Points",
-                "Exit Reason",
+                // "Risk:Reward", // Removed 'Risk:Reward' - calculate or ensure it exists
+                // "Target Points", // Removed 'Target Points' - use 'target'
+                // "SL Points", // Removed 'SL Points' - use 'stopLoss'
+                "Outcome Summary", // Changed from "Exit Reason"
                 "Gross P&L",
-                "Net P&L",
+                "P&L Amount", // Changed from "Net P&L" to "P&L Amount"
                 "Charges",
-                "Strategy",
-                "Setup",
-                "Indicators",
-                "Confidence",
+                "Strategy", // Changed from "Strategy"
+                // "Setup", // Removed 'Setup' as it's not directly in your sample
+                // "Indicators", // Removed 'Indicators' as it's not in your sample
+                "Confidence", // Changed from "Confidence"
                 "Emotions Before",
                 "Emotions After",
-                "Notes",
+                "Trade Analysis", // New field added
+                "Trade Notes", // Changed from "Notes"
                 "Mistakes",
-                "Did Well",
+                "What Did Well", // Changed from "Did Well"
                 "Tags",
               ].map((header) => (
                 <th
@@ -92,23 +93,23 @@ export default function AllTradesTable({ groupedTrades }) {
             {Object.values(groupedTrades).map((group, idx) => (
               <React.Fragment key={idx}>
                 {group.trades?.map((trade) => (
-                  <tr key={trade.id} className={group.color}>
+                  <tr key={trade.id || `${trade.date}-${trade.time}-${trade.symbol}`} className={group.color}>
                     <td className="px-4 py-2 text-sm text-gray-900">{trade.date}</td>
-                    <td className="px-4 py-2 text-sm text-gray-500">{trade.time}</td>
-                    <td className="px-4 py-2 text-sm text-gray-500">{trade.instrument}</td>
-                    <td className="px-4 py-2 text-sm text-gray-500">{trade.tradeType}</td>
+                    <td className="px-4 py-2 text-sm text-gray-500">{trade.time || "N/A"}</td> {/* time can be null */}
+                    <td className="px-4 py-2 text-sm text-gray-500">{trade.symbol || trade.instrument}</td> {/* Use symbol, fallback to instrument */}
+                    {/* <td className="px-4 py-2 text-sm text-gray-500">{trade.tradeType}</td> */} {/* Removed */}
                     <td
                       className={`px-4 py-2 text-sm font-semibold ${
-                        trade.direction === "Buy" ? "text-green-600" : "text-red-600"
+                        trade.direction === "Long" ? "text-green-600" : "text-red-600" // Changed "Buy" to "Long"
                       }`}
                     >
                       {trade.direction}
                     </td>
                     <td className="px-4 py-2 text-sm text-gray-500">{trade.quantity}</td>
-                    <td className="px-4 py-2 text-sm text-gray-500">{trade.riskReward}</td>
-                    <td className="px-4 py-2 text-sm text-gray-500">{trade.targetPoints}</td>
-                    <td className="px-4 py-2 text-sm text-gray-500">{trade.stopLossPoints}</td>
-                    <td className="px-4 py-2 text-sm text-gray-500">{trade.exitReason}</td>
+                    {/* <td className="px-4 py-2 text-sm text-gray-500">{trade.riskReward}</td> */} {/* Removed */}
+                    {/* <td className="px-4 py-2 text-sm text-gray-500">{trade.targetPoints}</td> */} {/* Removed */}
+                    {/* <td className="px-4 py-2 text-sm text-gray-500">{trade.stopLossPoints}</td> */} {/* Removed */}
+                    <td className="px-4 py-2 text-sm text-gray-500">{trade.outcomeSummary}</td> {/* New field */}
                     <td
                       className={`px-4 py-2 text-sm font-bold ${
                         trade.grossPnl >= 0 ? "text-green-700" : "text-red-700"
@@ -119,19 +120,29 @@ export default function AllTradesTable({ groupedTrades }) {
                     </td>
                     <td
                       className={`px-4 py-2 text-sm font-bold ${
-                        trade.netPnl >= 0 ? "text-green-700" : "text-red-700"
+                        // Use pnlAmount for Net P&L display and color logic
+                        (trade.pnlAmount || trade.netPnl || 0) >= 0 ? "text-green-700" : "text-red-700"
                       }`}
                     >
-                      {trade.netPnl >= 0 ? "+" : ""}
-                      {trade.netPnl}
+                      {(trade.pnlAmount || trade.netPnl || 0) >= 0 ? "+" : ""}
+                      {/* Display pnlAmount, fallback to netPnl, then 0 */}
+                      {trade.pnlAmount || trade.netPnl || 0}
                     </td>
                     <td className="px-4 py-2 text-sm text-gray-500">{trade.charges}</td>
-                    <td className="px-4 py-2 text-sm text-gray-500">{trade.strategyUsed}</td>
-                    <td className="px-4 py-2 text-sm text-gray-500">{trade.setupName}</td>
-                    <td className="px-4 py-2 text-sm text-gray-500">{trade.confirmationIndicators}</td>
+                    <td className="px-4 py-2 text-sm text-gray-500">{trade.strategy}</td> {/* Changed from strategyUsed */}
+                    {/* <td className="px-4 py-2 text-sm text-gray-500">{trade.setupName}</td> */} {/* Removed */}
+                    {/* <td className="px-4 py-2 text-sm text-gray-500">{trade.confirmationIndicators}</td> */} {/* Removed */}
                     <td className="px-4 py-2 text-sm text-gray-500">{trade.confidenceLevel}</td>
                     <td className="px-4 py-2 text-sm text-gray-500">{trade.emotionsBefore}</td>
                     <td className="px-4 py-2 text-sm text-gray-500">{trade.emotionsAfter}</td>
+
+                    {/* New Trade Analysis column */}
+                    <td
+                      className="px-4 py-2 text-sm text-gray-500 max-w-[6rem] cursor-pointer hover:text-blue-600 hover:underline"
+                      onClick={() => openModal("Trade Analysis", trade.tradeAnalysis || "N/A")}
+                    >
+                      <div className="truncate">{trade.tradeAnalysis || "N/A"}</div>
+                    </td>
 
                     <td
                       className="px-4 py-2 text-sm text-gray-500 max-w-[6rem] cursor-pointer hover:text-blue-600 hover:underline"
@@ -147,7 +158,7 @@ export default function AllTradesTable({ groupedTrades }) {
                     </td>
                     <td
                       className="px-4 py-2 text-sm text-gray-500 max-w-[6rem] cursor-pointer hover:text-blue-600 hover:underline"
-                      onClick={() => openModal("What Went Well", trade.whatDidWell || "N/A")}
+                      onClick={() => openModal("What Did Well", trade.whatDidWell || "N/A")}
                     >
                       <div className="truncate">{trade.whatDidWell || "N/A"}</div>
                     </td>

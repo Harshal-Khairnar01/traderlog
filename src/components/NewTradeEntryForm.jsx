@@ -1,26 +1,32 @@
+// components/NewTradeEntryForm.js
 "use client";
 
 import React, { useState, useEffect } from "react";
-import FormField from "./FormField";
+import FormField from "./FormField"; // Assuming FormField is in the same directory
+import { toast } from "react-toastify"; // Import toast
 
-export default function NewTradeEntryForm({ addTrade }) {
+export default function NewTradeEntryForm({ addTrade, onClose }) {
+  const [activeTab, setActiveTab] = useState("General");
   const [formData, setFormData] = useState({
+    // General Tab Fields
+    marketType: "Indian",
+    symbol: "",
     date: "",
-    time: "",
-    instrument: "",
-    tradeType: "Intraday",
-    direction: "Buy",
+    time: "", // Added time field
+    entryPrice: "",
     quantity: "",
-    riskReward: "",
-    targetPoints: "",
-    stopLossPoints: "",
-    exitReason: "Target Hit",
-    grossPnl: "",
-    netPnl: "",
-    charges: "",
-    strategyUsed: "Breakout",
-    setupName: "",
-    confirmationIndicators: "",
+    totalAmount: "",
+    exitPrice: "",
+    pnlAmount: "",
+    pnlPercentage: "",
+    direction: "Long",
+    stopLoss: "",
+    target: "",
+    strategy: "Select Strategy",
+    outcomeSummary: "Select Outcome Summary",
+    tradeAnalysis: "",
+
+    // Psychology Tab Fields
     confidenceLevel: "5",
     emotionsBefore: "Calm",
     emotionsAfter: "Satisfied",
@@ -29,19 +35,42 @@ export default function NewTradeEntryForm({ addTrade }) {
     mistakeChecklist: [],
     whatDidWell: "",
     tags: "",
+    screenshotUpload: null,
   });
 
-  // Auto-calculate net P&L
+  // Auto-calculate P&L Percentage
   useEffect(() => {
-    const gross = parseFloat(formData.grossPnl);
-    const charge = parseFloat(formData.charges);
-    if (!isNaN(gross) && !isNaN(charge)) {
+    const entry = parseFloat(formData.entryPrice);
+    const exit = parseFloat(formData.exitPrice);
+    const pnlAmt = parseFloat(formData.pnlAmount);
+    const totalAmt = parseFloat(formData.totalAmount);
+
+    let calculatedPnlPercentage = "";
+
+    if (!isNaN(entry) && !isNaN(exit) && entry !== 0) {
+      if (formData.direction === "Long") {
+        calculatedPnlPercentage = (((exit - entry) / entry) * 100).toFixed(2);
+      } else {
+        calculatedPnlPercentage = (((entry - exit) / entry) * 100).toFixed(2);
+      }
+    } else if (!isNaN(pnlAmt) && !isNaN(totalAmt) && totalAmt !== 0) {
+      calculatedPnlPercentage = ((pnlAmt / totalAmt) * 100).toFixed(2);
+    }
+
+    if (formData.pnlPercentage !== calculatedPnlPercentage) {
       setFormData((prev) => ({
         ...prev,
-        netPnl: (gross - charge).toFixed(2),
+        pnlPercentage: calculatedPnlPercentage,
       }));
     }
-  }, [formData.grossPnl, formData.charges]);
+  }, [
+    formData.entryPrice,
+    formData.exitPrice,
+    formData.direction,
+    formData.pnlAmount,
+    formData.totalAmount,
+    formData.pnlPercentage,
+  ]);
 
   const handleChange = (e) => {
     const { id, value, type, name } = e.target;
@@ -51,7 +80,10 @@ export default function NewTradeEntryForm({ addTrade }) {
         [name]: value,
       }));
     } else if (type === "file") {
-      console.log("File selected:", e.target.files[0]?.name);
+      setFormData((prevData) => ({
+        ...prevData,
+        [id]: e.target.files[0],
+      }));
     } else {
       setFormData((prevData) => ({
         ...prevData,
@@ -60,13 +92,24 @@ export default function NewTradeEntryForm({ addTrade }) {
     }
   };
 
+  const handleCheckboxChange = (e) => {
+    const { value, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      mistakeChecklist: checked
+        ? [...prev.mistakeChecklist, value]
+        : prev.mistakeChecklist.filter((item) => item !== value),
+    }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const requiredFields = ["date", "instrument", "quantity"];
+    const requiredFields = ["date", "time", "symbol", "quantity", "entryPrice"]; // Added 'time' to required fields
     for (let field of requiredFields) {
       if (!formData[field]) {
-        console.error("Please fill in all required trade details.");
+        console.error(`Please fill in all required trade details: ${field}`);
+        toast.error(`Please fill in all required trade details: ${field}`); // Use toast.error
         return;
       }
     }
@@ -74,38 +117,41 @@ export default function NewTradeEntryForm({ addTrade }) {
     const tradeEntry = {
       ...formData,
       quantity: Number(formData.quantity),
-      riskReward: Number(formData.riskReward),
-      targetPoints: Number(formData.targetPoints),
-      stopLossPoints: Number(formData.stopLossPoints),
-      grossPnl: formData.grossPnl ? Number(formData.grossPnl) : null,
-      netPnl: !isNaN(Number(formData.netPnl))
-        ? Number(formData.netPnl)
-        : Number(formData.grossPnl || 0) - Number(formData.charges || 0),
-      charges: formData.charges ? Number(formData.charges) : null,
+      entryPrice: Number(formData.entryPrice),
+      exitPrice: formData.exitPrice ? Number(formData.exitPrice) : null,
+      totalAmount: formData.totalAmount ? Number(formData.totalAmount) : null,
+      pnlAmount: formData.pnlAmount ? Number(formData.pnlAmount) : null,
+      pnlPercentage: formData.pnlPercentage
+        ? Number(formData.pnlPercentage)
+        : null,
+      stopLoss: formData.stopLoss ? Number(formData.stopLoss) : null,
+      target: formData.target ? Number(formData.target) : null,
       confidenceLevel: Number(formData.confidenceLevel),
-      mistakeChecklist: formData.mistakeChecklist,
+      screenshotUpload: formData.screenshotUpload
+        ? formData.screenshotUpload.name
+        : null,
     };
 
     addTrade(tradeEntry);
 
     // Reset form
     setFormData({
+      marketType: "Indian",
+      symbol: "",
       date: "",
-      time: "",
-      instrument: "",
-      tradeType: "Intraday",
-      direction: "Buy",
+      time: "", // Reset time field
+      entryPrice: "",
       quantity: "",
-      riskReward: "",
-      targetPoints: "",
-      stopLossPoints: "",
-      exitReason: "Target Hit",
-      grossPnl: "",
-      netPnl: "",
-      charges: "",
-      strategyUsed: "Breakout",
-      setupName: "",
-      confirmationIndicators: "",
+      totalAmount: "",
+      exitPrice: "",
+      pnlAmount: "",
+      pnlPercentage: "",
+      direction: "Long",
+      stopLoss: "",
+      target: "",
+      strategy: "Select Strategy",
+      outcomeSummary: "Select Outcome Summary",
+      tradeAnalysis: "",
       confidenceLevel: "5",
       emotionsBefore: "Calm",
       emotionsAfter: "Satisfied",
@@ -114,336 +160,479 @@ export default function NewTradeEntryForm({ addTrade }) {
       mistakeChecklist: [],
       whatDidWell: "",
       tags: "",
+      screenshotUpload: null,
     });
 
-    console.log(`Trade submitted and added to history!`);
+    toast.success("Trade submitted and added to history!"); // Use toast.success
+    if (onClose) {
+      onClose();
+    }
+  };
+
+  const handleReset = () => {
+    setFormData({
+      marketType: "Indian",
+      symbol: "",
+      date: "",
+      time: "", // Reset time field
+      entryPrice: "",
+      quantity: "",
+      totalAmount: "",
+      exitPrice: "",
+      pnlAmount: "",
+      pnlPercentage: "",
+      direction: "Long",
+      stopLoss: "",
+      target: "",
+      strategy: "Select Strategy",
+      outcomeSummary: "Select Outcome Summary",
+      tradeAnalysis: "",
+      confidenceLevel: "5",
+      emotionsBefore: "Calm",
+      emotionsAfter: "Satisfied",
+      tradeNotes: "",
+      mistakes: "",
+      mistakeChecklist: [],
+      whatDidWell: "",
+      tags: "",
+      screenshotUpload: null,
+    });
+    toast.info("Form reset!"); // Optional: Add a toast for reset
   };
 
   return (
-    <div className="bg-zinc-100 p-6 rounded-lg shadow-inner">
-      <h3 className="text-2xl font-semibold text-gray-700 mb-6">
-        Enter New Trade Details
-      </h3>
-      <form className="space-y-6" onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <FormField
-            label="Date"
-            id="date"
-            type="date"
-            value={formData.date}
-            onChange={handleChange}
-          />
-          <FormField
-            label="Time"
-            id="time"
-            type="time"
-            value={formData.time}
-            onChange={handleChange}
-          />
-          <FormField
-            label="Symbol / Asset Name"
-            id="instrument"
-            type="select"
-            options={["NIFTY", "BANKNIFTY", "SENSEX"]}
-            value={formData.instrument}
-            onChange={handleChange}
-          />
-          <FormField
-            label="Type of Trade"
-            id="tradeType"
-            type="select"
-            options={["Intraday", "Swing", "Positional", "Scalping"]}
-            value={formData.tradeType}
-            onChange={handleChange}
-          />
-          <FormField
-            label="Direction"
-            id="direction"
-            type="radio-group"
-            className="col-span-1 md:col-span-2"
-            options={[
-              { label: "Buy", value: "Buy" },
-              { label: "Sell", value: "Sell" },
-            ]}
-            value={formData.direction}
-            onChange={handleChange}
-          />
-          <FormField
-            label="Quantity"
-            id="quantity"
-            type="number"
-            placeholder="e.g., 50"
-            value={formData.quantity}
-            onChange={handleChange}
-          />
-          <FormField
-            label="Risk to Reward"
-            id="riskReward"
-            type="number"
-            placeholder="e.g., 2.5"
-            value={formData.riskReward}
-            onChange={handleChange}
-          />
-          <FormField
-            label="Target Points"
-            id="targetPoints"
-            type="number"
-            placeholder="e.g., 25"
-            value={formData.targetPoints}
-            onChange={handleChange}
-          />
-          <FormField
-            label="Stop Loss (Points)"
-            id="stopLossPoints"
-            type="number"
-            placeholder="e.g., 10"
-            value={formData.stopLossPoints}
-            onChange={handleChange}
-          />
-          <FormField
-            label="Exit Reason"
-            id="exitReason"
-            type="select"
-            options={[
-              "Target Hit",
-              "SL Hit",
-              "Manual Exit",
-              "Time-based Exit",
-              "Other",
-            ]}
-            value={formData.exitReason}
-            onChange={handleChange}
-          />
-        </div>
-
-        <h4 className="text-xl font-semibold text-gray-700 mt-6 mb-4">
-          Profit & Loss
-        </h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <FormField
-            label="Gross P&L (₹)"
-            id="grossPnl"
-            type="number"
-            step="0.01"
-            placeholder="e.g., 2500.00"
-            value={formData.grossPnl}
-            onChange={handleChange}
-          />
-          <FormField
-            label="Net P&L (₹, after charges)"
-            id="netPnl"
-            type="number"
-            step="0.01"
-            value={formData.netPnl}
-            onChange={() => {}}
-          />
-          <FormField
-            label="Charges (₹, Optional)"
-            id="charges"
-            type="number"
-            step="0.01"
-            placeholder="e.g., 50.00"
-            value={formData.charges}
-            onChange={handleChange}
-          />
-        </div>
-
-        <h4 className="text-xl font-semibold text-gray-700 mt-6 mb-4">
-          Strategy & Setup
-        </h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            label="Strategy Used"
-            id="strategyUsed"
-            type="select"
-            options={[
-              "Breakout",
-              "Reversal",
-              "Moving Average",
-              "Price Action",
-              "Gap Up/Down",
-              "Trendline",
-              "Self Setup",
-              "Support",
-              "Resistance",
-              "Other",
-            ]}
-            value={formData.strategyUsed}
-            onChange={handleChange}
-          />
-          <FormField
-            label="Setup Name (If predefined)"
-            id="setupName"
-            type="text"
-            placeholder="e.g., Flag Pattern"
-            value={formData.setupName}
-            onChange={handleChange}
-          />
-          <FormField
-            label="Confirmation Indicators Used"
-            id="confirmationIndicators"
-            type="text"
-            className="col-span-1 md:col-span-2"
-            placeholder="e.g., RSI, MACD, VWAP"
-            value={formData.confirmationIndicators}
-            onChange={handleChange}
-          />
-        </div>
-
-        <h4 className="text-xl font-semibold text-gray-700 mt-6 mb-4">
-          Psychology & Mindset
-        </h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <FormField
-            label="Confidence Level (1-10)"
-            id="confidenceLevel"
-            type="range"
-            min="1"
-            max="10"
-            value={formData.confidenceLevel}
-            onChange={handleChange}
+    <div className="bg-zinc-800 rounded-lg shadow-xl text-white w-full h-[calc(100vh-80px)] flex flex-col">
+      {/* Header (fixed at top of this component) */}
+      <div className="flex justify-between items-center px-6 py-3 border-b border-zinc-700">
+        <h2 className="text-xl font-semibold text-gray-100">Add New Trade</h2>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-100 text-4xl cursor-pointer"
+            aria-label="Close form"
           >
-            <div className="flex justify-between text-xs text-zinc-600 mt-1">
-              <span>1 (Low)</span>
-              <span className="text-zinc-800 font-bold">
-                {formData.confidenceLevel}
-              </span>
-              <span>10 (High)</span>
-            </div>
-          </FormField>
-          <FormField
-            label="Emotions Before Trade"
-            id="emotionsBefore"
-            type="select"
-            options={[
-              "Calm",
-              "Greedy",
-              "Fearful",
-              "Overconfident",
-              "Anxious",
-              "Excited",
-              "Neutral",
-            ]}
-            value={formData.emotionsBefore}
-            onChange={handleChange}
-          />
-          <FormField
-            label="Emotions After Trade"
-            id="emotionsAfter"
-            type="select"
-            options={[
-              "Calm",
-              "Satisfied",
-              "Frustrated",
-              "Regretful",
-              "Happy",
-              "Angry",
-              "Neutral",
-            ]}
-            value={formData.emotionsAfter}
-            onChange={handleChange}
-          />
-        </div>
+            &times;
+          </button>
+        )}
+      </div>
 
-        <h4 className="text-xl font-semibold text-gray-700 mt-6 mb-4">
-          Notes / Learnings
-        </h4>
-        <div className="space-y-4">
-          <FormField
-            label="Trade Notes / Journal Entry"
-            id="tradeNotes"
-            type="textarea"
-            rows="4"
-            placeholder="Detailed notes about the trade"
-            value={formData.tradeNotes}
-            onChange={handleChange}
-          />
-          <FormField
-            label="Mistakes (if any)"
-            id="mistakes"
-            type="textarea"
-            rows="3"
-            placeholder="What went wrong?"
-            value={formData.mistakes}
-            onChange={handleChange}
-          />
-          {/* ✅ Mistake checklist row */}
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 mb-2">
-              Common Mistakes (Select if any)
-            </label>
-            <div className="flex flex-wrap gap-4">
-              {[
-                "No SL",
-                "FOMO",
-                "Overtrade",
-                "Perfect",
-                "SL Slip",
-                "Ignore R:R",
-                "Greed",
-                "Fear",
-                "Not Follow SelfSetup",
-              ].map((mistake) => (
-                <label key={mistake} className="flex items-center space-x-2 text-sm text-gray-900">
-                  <input
-                    type="checkbox"
-                    value={mistake}
-                    checked={formData.mistakeChecklist.includes(mistake)}
-                    onChange={(e) => {
-                      const checked = e.target.checked;
-                      const value = e.target.value;
-                      setFormData((prev) => ({
-                        ...prev,
-                        mistakeChecklist: checked
-                          ? [...prev.mistakeChecklist, value]
-                          : prev.mistakeChecklist.filter((item) => item !== value),
-                      }));
-                    }}
-                  />
-                  <span>{mistake}</span>
+      {/* Tabs (fixed below header) */}
+      <div className="flex border-b border-zinc-700 px-6 py-2">
+        <button
+          className={`px-4 py-2 text-sm font-medium ${
+            activeTab === "General"
+              ? "border-b-2 border-blue-500 text-blue-400"
+              : "text-gray-400 hover:text-gray-200"
+          }`}
+          onClick={() => setActiveTab("General")}
+        >
+          General
+        </button>
+        <button
+          className={`px-4 py-2 text-sm font-medium ${
+            activeTab === "Psychology"
+              ? "border-b-2 border-blue-500 text-blue-400"
+              : "text-gray-400 hover:text-gray-200"
+          }`}
+          onClick={() => setActiveTab("Psychology")}
+        >
+          Psychology
+        </button>
+      </div>
+
+      {/* Scrollable Form Content */}
+      <form
+        className="flex-grow space-y-6 px-6 py-2 overflow-y-auto scrollbar scrollbar-thumb-zinc-600 scrollbar-track-zinc-700 scrollbar-w-2"
+        onSubmit={handleSubmit}
+      >
+        {activeTab === "General" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <FormField
+              label="Market Type"
+              id="marketType"
+              type="select"
+              options={["Indian", "US", "Crypto", "Forex"]}
+              value={formData.marketType}
+              onChange={handleChange}
+            />
+            <FormField
+              label="Symbol"
+              id="symbol"
+              type="text"
+              placeholder="RELIANCE, NIFTY 50, etc."
+              value={formData.symbol}
+              onChange={handleChange}
+            />
+            <FormField
+              label="Date"
+              id="date"
+              type="date"
+              placeholder="dd-mm-yyyy"
+              value={formData.date}
+              onChange={handleChange}
+            />
+            {/* New Time Field */}
+            <FormField
+              label="Time"
+              id="time"
+              type="time" // Set type to "time"
+              placeholder="HH:MM"
+              value={formData.time}
+              onChange={handleChange}
+            />
+            {/* Entry Price, Quantity, Total Amount, Exit Price in one row */}
+            <div className="col-span-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <FormField
+                label="Entry Price"
+                id="entryPrice"
+                type="number"
+                step="0.01"
+                placeholder="Entry Price"
+                value={formData.entryPrice}
+                onChange={handleChange}
+              />
+              <div className="flex w-full gap-2">
+                <FormField
+                  label="Quantity"
+                  id="quantity"
+                  type="number"
+                  placeholder="Quantity"
+                  value={formData.quantity}
+                  onChange={handleChange}
+                />
+                <FormField
+                  label="Total Amount"
+                  id="totalAmount"
+                  type="number"
+                  step="0.01"
+                  placeholder="Amount"
+                  value={formData.totalAmount}
+                  onChange={handleChange}
+                />
+              </div>
+              <FormField
+                label="Exit Price"
+                id="exitPrice"
+                type="number"
+                step="0.01"
+                placeholder="Exit Price"
+                value={formData.exitPrice}
+                onChange={handleChange}
+              />
+            </div>
+
+            {/* P&L Amount, P&L (%), Direction, Stop Loss, and Target in one row */}
+            {/* Using col-span-full to ensure it spans the whole width of the outer grid */}
+            <div className="col-span-full grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4">
+              <div className="flex gap-2">
+                <FormField
+                  label="P&L Amount"
+                  id="pnlAmount"
+                  type="number"
+                  step="0.01"
+                  placeholder="Amount"
+                  value={formData.pnlAmount}
+                  onChange={handleChange}
+                />
+                <FormField
+                  label="P&L (%)"
+                  id="pnlPercentage"
+                  type="text"
+                  placeholder="% Change"
+                  value={formData.pnlPercentage}
+                  onChange={handleChange}
+                />
+              </div>
+              {/* Direction buttons - we need to make this section behave like a single grid item */}
+              <div className="col-span-1">
+                {" "}
+                {/* This div occupies one column in the parent grid */}
+                <label className="block text-sm font-medium text-gray-400 mb-2">
+                  Direction
                 </label>
-              ))}
+                <div className="flex space-x-2 sm:space-x-4">
+                  {" "}
+                  {/* Adjusted spacing for responsiveness */}
+                  <button
+                    type="button"
+                    className={`px-4 py-2 rounded-md font-semibold text-sm transition-colors duration-200 w-1/2 ${
+                      formData.direction === "Long"
+                        ? "bg-green-600 text-white"
+                        : "bg-zinc-700 text-gray-300 hover:bg-zinc-600"
+                    }`}
+                    onClick={() =>
+                      handleChange({
+                        target: {
+                          id: "direction",
+                          value: "Long",
+                          type: "radio",
+                          name: "direction",
+                        },
+                      })
+                    }
+                  >
+                    <span className="mr-1">↑</span> Long
+                  </button>
+                  <button
+                    type="button"
+                    className={`px-4 py-2 rounded-md font-semibold text-sm w-1/2 transition-colors duration-200 ${
+                      formData.direction === "Short"
+                        ? "bg-red-600 text-white"
+                        : "bg-zinc-700 text-gray-300 hover:bg-zinc-600"
+                    }`}
+                    onClick={() =>
+                      handleChange({
+                        target: {
+                          id: "direction",
+                          value: "Short",
+                          type: "radio",
+                          name: "direction",
+                        },
+                      })
+                    }
+                  >
+                    <span className="mr-1">↓</span> Short
+                  </button>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <FormField
+                  label="Stop Loss"
+                  id="stopLoss"
+                  type="number"
+                  step="0.01"
+                  placeholder="Stop Loss"
+                  value={formData.stopLoss}
+                  onChange={handleChange}
+                />
+                <FormField
+                  label="Target"
+                  id="target"
+                  type="number"
+                  step="0.01"
+                  placeholder="Target"
+                  value={formData.target}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+
+            {/* Strategy and Outcome Summary in one row */}
+            <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                label="Strategy"
+                id="strategy"
+                type="select"
+                options={[
+                  "Select Strategy",
+                  "Breakout",
+                  "Reversal",
+                  "Moving Average",
+                  "Price Action",
+                  "Gap Up/Down",
+                  "Trendline",
+                  "Self Setup",
+                  "Support",
+                  "Resistance",
+                  "Other",
+                ]}
+                value={formData.strategy}
+                onChange={handleChange}
+              />
+              <FormField
+                label="Outcome Summary"
+                id="outcomeSummary"
+                type="select"
+                options={[
+                  "Select Outcome Summary",
+                  "Target Hit",
+                  "SL Hit",
+                  "Manual Exit",
+                  "Time-based Exit",
+                  "Other",
+                ]}
+                value={formData.outcomeSummary}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="col-span-full">
+              <FormField
+                label="Trade Analysis"
+                id="tradeAnalysis"
+                type="textarea"
+                rows="4"
+                placeholder="Why did you take this trade? What was your analysis?"
+                value={formData.tradeAnalysis}
+                onChange={handleChange}
+              />
             </div>
           </div>
+        )}
 
-          <FormField
-            label="What I Did Well?"
-            id="whatDidWell"
-            type="textarea"
-            rows="3"
-            placeholder="What positive actions did I take?"
-            value={formData.whatDidWell}
-            onChange={handleChange}
-          />
-        </div>
+        {activeTab === "Psychology" && (
+          <div className="space-y-6">
+            <h4 className="text-xl font-semibold text-gray-100">
+              Psychology & Mindset
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <FormField
+                label="Confidence Level (1-10)"
+                id="confidenceLevel"
+                type="range"
+                min="1"
+                max="10"
+                value={formData.confidenceLevel}
+                onChange={handleChange}
+              >
+                <div className="flex justify-between text-xs text-zinc-400 mt-1">
+                  <span>1 (Low)</span>
+                  <span className="text-zinc-100 font-bold">
+                    {formData.confidenceLevel}
+                  </span>
+                  <span>10 (High)</span>
+                </div>
+              </FormField>
+              <FormField
+                label="Emotions Before Trade"
+                id="emotionsBefore"
+                type="select"
+                options={[
+                  "Calm",
+                  "Greedy",
+                  "Fearful",
+                  "Overconfident",
+                  "Anxious",
+                  "Excited",
+                  "Neutral",
+                ]}
+                value={formData.emotionsBefore}
+                onChange={handleChange}
+              />
+              <FormField
+                label="Emotions After Trade"
+                id="emotionsAfter"
+                type="select"
+                options={[
+                  "Calm",
+                  "Satisfied",
+                  "Frustrated",
+                  "Regretful",
+                  "Happy",
+                  "Angry",
+                  "Neutral",
+                ]}
+                value={formData.emotionsAfter}
+                onChange={handleChange}
+              />
+            </div>
 
-        <h4 className="text-xl font-semibold text-gray-700 mt-6 mb-4">
-          Extras (Optional)
-        </h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            label="Screenshot Upload (Entry/Exit chart)"
-            id="screenshotUpload"
-            type="file"
-            onChange={handleChange}
-          />
-          <FormField
-            label="Tags"
-            id="tags"
-            type="text"
-            placeholder="e.g., Overtrading, Perfect Setup"
-            value={formData.tags}
-            onChange={handleChange}
-          />
-        </div>
+            <h4 className="text-xl font-semibold text-gray-100 mt-6 mb-4">
+              Notes / Learnings
+            </h4>
+            <div className="space-y-4">
+              <FormField
+                label="Trade Notes / Journal Entry"
+                id="tradeNotes"
+                type="textarea"
+                rows="4"
+                placeholder="Detailed notes about the trade"
+                value={formData.tradeNotes}
+                onChange={handleChange}
+              />
+              <FormField
+                label="Mistakes (if any)"
+                id="mistakes"
+                type="textarea"
+                rows="3"
+                placeholder="What went wrong?"
+                value={formData.mistakes}
+                onChange={handleChange}
+              />
+              <div>
+                <label className="block text-sm font-medium text-zinc-400 mb-2">
+                  Common Mistakes (Select if any)
+                </label>
+                <div className="flex flex-wrap gap-4">
+                  {[
+                    "No SL",
+                    "FOMO",
+                    "Overtrade",
+                    "Perfect",
+                    "SL Slip",
+                    "Ignore R:R",
+                    "Greed",
+                    "Fear",
+                    "Not Follow SelfSetup",
+                  ].map((mistake) => (
+                    <label
+                      key={mistake}
+                      className="flex items-center space-x-2 text-sm text-gray-300"
+                    >
+                      <input
+                        type="checkbox"
+                        value={mistake}
+                        checked={formData.mistakeChecklist.includes(mistake)}
+                        onChange={handleCheckboxChange}
+                        className="form-checkbox h-4 w-4 text-blue-600 bg-zinc-700 border-zinc-600 rounded focus:ring-blue-500"
+                      />
+                      <span>{mistake}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
 
+              <FormField
+                label="What I Did Well?"
+                id="whatDidWell"
+                type="textarea"
+                rows="3"
+                placeholder="What positive actions did I take?"
+                value={formData.whatDidWell}
+                onChange={handleChange}
+              />
+            </div>
+
+            <h4 className="text-xl font-semibold text-gray-100 mt-6 mb-4">
+              Extras (Optional)
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                label="Screenshot Upload (Entry/Exit chart)"
+                id="screenshotUpload"
+                type="file"
+                onChange={handleChange}
+              />
+              <FormField
+                label="Tags"
+                id="tags"
+                type="text"
+                placeholder="e.g., Overtrading, Perfect Setup"
+                value={formData.tags}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+        )}
+      </form>
+
+      {/* Fixed Footer with Buttons */}
+      <div className="flex justify-end space-x-4 pt-6 pb-4 px-6 border-t border-zinc-700 bg-zinc-800">
+        <button
+          type="button"
+          onClick={handleReset}
+          className="px-6 py-2 rounded-md text-zinc-300 border border-zinc-600 hover:bg-zinc-700 hover:text-white transition-colors duration-200"
+        >
+          Reset
+        </button>
         <button
           type="submit"
-          className="w-full bg-zinc-700 hover:bg-zinc-800 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-[1.01] mt-8"
+          onClick={handleSubmit}
+          className="px-6 py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors duration-200"
         >
-          Save New Trade Entry
+          Save Trade
         </button>
-      </form>
+      </div>
     </div>
   );
 }
