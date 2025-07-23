@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect, usePathname } from 'next/navigation';
-import LeftSidebar from './LeftSidebar';
+import LeftSidebar from '@/components/LeftSideBar';
 
 const AppLayout = ({ children }) => {
   const { data: session, status } = useSession();
