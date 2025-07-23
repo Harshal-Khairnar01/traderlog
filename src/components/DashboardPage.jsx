@@ -1,18 +1,34 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
+// Import Recharts components
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+
+// Assuming LeftSidebar component is in components/LeftSidebar.jsx
+// import LeftSidebar from '../components/LeftSidebar'; // Make sure this import path is correct if you're using it
+
+import NewTradeEntryForm from "./NewTradeEntryForm"; // Import the NewTradeEntryForm
+import Modal from "./Modal"; // Assuming you will create a Modal component
 
 const DashboardPage = ({ session }) => {
   const [tradeHistory, setTradeHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [showNewTradeModal, setShowNewTradeModal] = useState(false); // State for modal
 
   const userName = session?.user?.name || "Guest";
   const userInitial = userName.charAt(0).toUpperCase();
-  const initialCapital = session?.user?.initialCapital || 0;
 
   const parseResponseBody = async (response) => {
     const contentType = response.headers.get("content-type");
@@ -21,69 +37,228 @@ const DashboardPage = ({ session }) => {
       : await response.text();
   };
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      setIsLoading(true);
-      setError(null);
+  const fetchDashboardData = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
 
-      if (!session?.user?.id) {
-        setError("User not authenticated. Please log in again.");
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const res = await fetch("/api/v1/trades");
-
-        if (!res.ok) {
-          const body = await parseResponseBody(res);
-          const errorMessage =
-            typeof body === "object" && body.message
-              ? body.message
-              : body.toString();
-          throw new Error(errorMessage || res.statusText);
+    // Attempt to load from localStorage first
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        const storedData = localStorage.getItem("tradeJournalData");
+        if (storedData) {
+          const data = JSON.parse(storedData);
+          const processedTrades = data.map((trade) => ({
+            ...trade,
+            // Convert date and time to a single Date object for proper sorting/charting
+            dateTime: new Date(`${trade.date}T${trade.time}`),
+            // *** CHANGE HERE: Prioritize pnlAmount, fall back to netPnl, then 0 ***
+            pnlAmount: parseFloat(trade.pnlAmount || trade.netPnl || 0),
+            grossPnl: parseFloat(trade.grossPnl || 0), // Assuming grossPnl is still relevant
+            charges: parseFloat(trade.charges || 0),
+          }));
+          setTradeHistory(processedTrades);
+          setIsLoading(false);
+          return; // Exit if data is found in localStorage
         }
-
-        const data = await res.json();
-        setTradeHistory(data.tradeHistory);
-      } catch (err) {
-        console.error("Failed to load dashboard data:", err);
-        setError(err.message || "Failed to load data.");
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (err) {
+      console.warn(
+        "Failed to load trade data from local storage, attempting API:",
+        err
+      );
+      // Do not set error here, just log and proceed to API fetch
+    }
 
-    fetchDashboardData();
+    // Fallback to API fetch if no data in localStorage or an error occurred with localStorage
+    if (!session?.user?.id) {
+      setError("User not authenticated. Please log in again.");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/v1/trades");
+
+      if (!res.ok) {
+        const body = await parseResponseBody(res);
+        const errorMessage =
+          typeof body === "object" && body.message
+            ? body.message
+            : body.toString();
+        throw new Error(errorMessage || res.statusText);
+      }
+
+      const data = await res.json();
+      // Ensure pnlAmount, grossPnl, charges are treated as numbers, and add dateTime
+      const processedTrades = data.tradeHistory.map((trade) => ({
+        ...trade,
+        dateTime: new Date(`${trade.date}T${trade.time}`),
+        // *** CHANGE HERE: Prioritize pnlAmount, fall back to netPnl, then 0 ***
+        pnlAmount: parseFloat(trade.pnlAmount || trade.netPnl || 0),
+        grossPnl: parseFloat(trade.grossPnl || 0), // Assuming grossPnl is still relevant
+        charges: parseFloat(trade.charges || 0),
+      }));
+      setTradeHistory(processedTrades);
+      // Store in localStorage if fetched from API
+      if (typeof window !== "undefined" && window.localStorage) {
+        // Store the original tradeHistory from API response, as processing happens on load
+        localStorage.setItem("tradeJournalData", JSON.stringify(data.tradeHistory));
+      }
+    } catch (err) {
+      console.error("Failed to load dashboard data from API:", err);
+      setError(err.message || "Failed to load data from API.");
+    } finally {
+      setIsLoading(false);
+    }
   }, [session]);
 
-  const getNetPnl = (trade) => {
-    const net = Number(trade.netPnl);
-    const gross = Number(trade.grossPnl);
-    const charges = Number(trade.charges);
-    return !isNaN(net)
-      ? net
-      : !isNaN(gross) && !isNaN(charges)
-      ? gross - charges
-      : 0;
-  };
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
-  const totalProfit = tradeHistory.reduce((sum, t) => {
-    const pnl = getNetPnl(t);
-    return pnl > 0 ? sum + pnl : sum;
-  }, 0);
+  // Function to add a new trade (will be passed to the form)
+  const addTrade = useCallback(async (newTrade) => {
+    try {
+      // Optimistically update UI
+      setTradeHistory((prev) => {
+        // Ensure the newTrade also has pnlAmount correctly parsed
+        const processedNewTrade = {
+          ...newTrade,
+          dateTime: new Date(`${newTrade.date}T${newTrade.time}`),
+          // *** CHANGE HERE: Ensure pnlAmount is parsed for new trades ***
+          pnlAmount: parseFloat(newTrade.pnlAmount || newTrade.netPnl || 0),
+          grossPnl: parseFloat(newTrade.grossPnl || 0),
+          charges: parseFloat(newTrade.charges || 0),
+        };
+        const updatedHistory = [...prev, processedNewTrade];
+        if (typeof window !== "undefined" && window.localStorage) {
+          localStorage.setItem("tradeJournalData", JSON.stringify(updatedHistory));
+        }
+        return updatedHistory;
+      });
+      setShowNewTradeModal(false); // Close modal on successful addition
 
-  const totalLoss = tradeHistory.reduce((sum, t) => {
-    const pnl = getNetPnl(t);
-    return pnl < 0 ? sum + pnl : sum;
-  }, 0);
+      const res = await fetch("/api/v1/trades", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newTrade),
+      });
 
-  const totalCharges = tradeHistory.reduce(
-    (sum, t) => sum + (Number(t.charges) || 0),
-    0
-  );
+      if (!res.ok) {
+        const body = await parseResponseBody(res);
+        const errorMessage =
+          typeof body === "object" && body.message
+            ? body.message
+            : body.toString();
+        throw new Error(errorMessage || res.statusText);
+      }
 
-  const totalPnl = tradeHistory.reduce((sum, t) => sum + getNetPnl(t), 0);
+      // Re-fetch data to ensure consistency with backend (or update with response data)
+      fetchDashboardData();
+
+    } catch (err) {
+      console.error("Failed to add new trade:", err);
+      setError(err.message || "Failed to add new trade.");
+      // Rollback UI if optimistic update was done and API call failed
+      fetchDashboardData(); // Re-fetch to revert to actual state
+    }
+  }, [fetchDashboardData]);
+
+
+  // --- Calculations for Dashboard Statistics ---
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+
+  const monthlyTrades = useMemo(() => {
+    return tradeHistory.filter((t) => {
+      const tradeDate = new Date(t.date); // Use original date string for month/year filter
+      // Ensure date parsing is robust, especially for 'YYYY-MM-DD' format
+      if (isNaN(tradeDate.getTime())) {
+        console.warn("Invalid trade date found:", t.date);
+        return false; // Skip invalid dates
+      }
+      return (
+        tradeDate.getMonth() === currentMonth &&
+        tradeDate.getFullYear() === currentYear
+      );
+    });
+  }, [tradeHistory, currentMonth, currentYear]);
+
+  const highestPnl = useMemo(() => {
+    if (tradeHistory.length === 0) return 0;
+    // *** CHANGE HERE: Use pnlAmount for highestPnl ***
+    const allPnls = tradeHistory.map((t) => t.pnlAmount);
+    return Math.max(...allPnls);
+  }, [tradeHistory]);
+
+  const totalTradesCount = tradeHistory.length;
+  const tradesThisMonthCount = monthlyTrades.length;
+
+  const winRate = useMemo(() => {
+    if (monthlyTrades.length === 0) return 0;
+    // *** CHANGE HERE: Use pnlAmount for winRate ***
+    const winningTrades = monthlyTrades.filter((t) => t.pnlAmount > 0).length;
+    return (winningTrades / monthlyTrades.length) * 100;
+  }, [monthlyTrades]);
+
+  const avgRiskReward = useMemo(() => {
+    if (monthlyTrades.length === 0) return "N/A";
+    // *** CHANGE HERE: Use pnlAmount for avgRiskReward ***
+    const positiveTrades = monthlyTrades.filter((t) => t.pnlAmount > 0);
+    // *** CHANGE HERE: Use pnlAmount for avgRiskReward ***
+    const negativeTrades = monthlyTrades.filter((t) => t.pnlAmount < 0);
+
+    const avgWinPnl =
+      positiveTrades.length > 0
+        ? positiveTrades.reduce((sum, t) => sum + t.pnlAmount, 0) /
+          positiveTrades.length
+        : 0;
+    const avgLossPnl =
+      negativeTrades.length > 0
+        ? negativeTrades.reduce((sum, t) => sum + t.pnlAmount, 0) /
+          negativeTrades.length
+        : 0;
+
+    if (avgWinPnl > 0 && avgLossPnl < 0) {
+      return `${(avgWinPnl / Math.abs(avgLossPnl)).toFixed(2)}:1`;
+    } else if (avgWinPnl > 0) {
+      return "Wins Only"; // All trades were positive, no risk to reward
+    } else if (avgLossPnl < 0) {
+      return "Losses Only"; // All trades were negative, no reward to risk
+    } else {
+      return "0:0"; // No positive or negative trades
+    }
+  }, [monthlyTrades]);
+
+  // Confidence Index Placeholder - You'll need actual logic to calculate this
+  const confidenceIndex = 0.65; // Example: 0.0 to 1.0 (Low to High)
+
+  // --- Cumulative P&L Calculation for Chart ---
+  const cumulativePnlData = useMemo(() => {
+    if (tradeHistory.length === 0) return [];
+
+    // Sort trades by the new dateTime property to ensure correct chronological order
+    const sortedTrades = [...tradeHistory].sort(
+      (a, b) => a.dateTime.getTime() - b.dateTime.getTime()
+    );
+
+    let cumulativeSum = 0;
+    const data = [];
+
+    sortedTrades.forEach((trade) => {
+      // *** CHANGE HERE: Use pnlAmount for cumulative P&L ***
+      cumulativeSum += trade.pnlAmount;
+      data.push({
+        // Use a combined date/time string or just date for X-axis
+        name: `${trade.date} ${trade.time}`, // Recharts often uses 'name' for X-axis labels
+        pnl: cumulativeSum,
+      });
+    });
+
+    return data;
+  }, [tradeHistory]);
 
   if (isLoading) {
     return (
@@ -102,24 +277,44 @@ const DashboardPage = ({ session }) => {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-800 p-4 flex items-center justify-center w-full">
-      <div className="bg-zinc-900 p-8 rounded-xl shadow-lg w-full max-w-4xl mx-auto min-h-[calc(100vh-8rem)] flex flex-col">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center space-x-4">
-            <h2 className="text-3xl font-bold text-gray-200">
-              Welcome, {userName}!
-            </h2>
-          </div>
-          <nav className="relative">
+    <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center p-4 sm:p-6 lg:p-8">
+      <div className="w-full max-w-7xl flex justify-between items-center mb-6 ">
+        <div className=" w-full flex items-center space-x-4 relative justify-between ">
+          <select className="bg-slate-800 border border-slate-700 rounded px-3 py-1 text-sm text-gray-200">
+            <option>Last 30 Days</option>
+          </select>
+          <div className=" flex items-center gap-5">
+            <button
+              onClick={() => setShowNewTradeModal(true)} // Open modal on click
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1.5 px-3 rounded-md text-sm flex items-center gap-1"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              New Trade
+            </button>
+
+            {/* User Profile Dropdown */}
             <button
               onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-              className="w-10 h-10 rounded-full bg-pink-600 flex items-center justify-center text-white font-bold text-lg hover:bg-pink-700 transition-colors"
+              className="w-9 h-9 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-base hover:bg-purple-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50"
               aria-label="Profile menu"
             >
               {userInitial}
             </button>
             {showProfileDropdown && (
-              <div className="absolute  top-6 right-8 mt-2 w-48  bg-zinc-950 rounded-md shadow-lg z-10">
+              <div className="absolute top-full right-0 mt-2 w-48 bg-slate-800 rounded-md shadow-lg z-10">
                 <Link
                   href="/profile"
                   className="block px-4 py-2 text-gray-200 hover:bg-slate-700 rounded-t-md"
@@ -138,64 +333,250 @@ const DashboardPage = ({ session }) => {
                 </button>
               </div>
             )}
-          </nav>
-        </div>
-
-        <h3 className="text-2xl font-semibold text-gray-300 mb-6">
-          Your Trading Overview
-        </h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <InfoCard
-            title="Initial Capital"
-            value={`₹${initialCapital.toLocaleString()}`}
-          />
-          <InfoCard title="Total Trades" value={tradeHistory.length} />
-          <InfoCard
-            title="Total Charges"
-            value={`₹${totalCharges.toFixed(2)}`}
-            color="text-yellow-300"
-          />
-          <InfoCard
-            title="Total Profit"
-            value={`₹${totalProfit.toFixed(2)}`}
-            color="text-green-500"
-          />
-          <InfoCard
-            title="Total Loss"
-            value={`₹${totalLoss.toFixed(2)}`}
-            color="text-red-500"
-          />
-          <InfoCard
-            title="Total P&L (Net)"
-            value={`₹${totalPnl.toFixed(2)}`}
-            color={totalPnl >= 0 ? "text-green-500" : "text-red-500"}
-          />
-        </div>
-
-        <div className="flex items-center justify-between mt-auto">
-          <Link
-            href="/journal"
-            className="bg-slate-700 hover:bg-slate-800 text-white font-bold py-3 px-4 rounded-lg shadow-md transition transform hover:scale-[1.01]"
-          >
-            Go to Journal
-          </Link>
-          <Link
-            href="/all-trades"
-            className="bg-slate-700 hover:bg-slate-800 text-white font-bold py-3 px-4 rounded-lg shadow-md transition transform hover:scale-[1.01]"
-          >
-            View All Trades
-          </Link>
+          </div>
         </div>
       </div>
+
+      {/* Main Content Area */}
+      <div className="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Sidebar / Navigation (as per original image, but not implemented in this component) */}
+        {/*
+          If you have a LeftSidebar component, uncomment this and make sure
+          it's correctly imported and placed within your layout.
+          <LeftSidebar />
+        */}
+
+        {/* Dashboard Main Panel */}
+        <div className="lg:col-span-3">
+          {" "}
+          {/* This div now spans all columns */}
+          {/* Top Row Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <DashboardCard
+              title="Higest P&L"
+              value={`₹${highestPnl.toLocaleString("en-IN")}`}
+              valueColor={highestPnl >= 0 ? "text-green-400" : "text-red-400"}
+              change="+" // Placeholder for change vs last month
+            />
+            <DashboardCard
+              title="Win Rate"
+              value={`${winRate.toFixed(1)}%`}
+              valueColor="text-blue-400"
+              change="+" // Placeholder for change vs last month
+            />
+            <DashboardCard
+              title="Avg. Risk/Reward"
+              value={avgRiskReward}
+              valueColor="text-yellow-400"
+              change="-" // Placeholder for change vs last month
+            />
+            <DashboardCard
+              title="Trades This Month"
+              value={tradesThisMonthCount}
+              valueColor="text-purple-400"
+              change="+" // Placeholder for change vs last month
+            />
+          </div>
+          {/* Confidence Index */}
+          <div className="bg-slate-800 p-6 rounded-lg shadow-md mb-6">
+            <h3 className="text-lg font-semibold text-gray-200 mb-4">
+              Confidence Index
+            </h3>
+            <div className="relative h-3 bg-gray-700 rounded-full overflow-hidden mb-2">
+              <div
+                className="absolute h-full bg-blue-500 rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${confidenceIndex * 100}%` }}
+              ></div>
+              {/* Marker for current confidence */}
+              <div
+                className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-blue-500 rounded-full"
+                style={{ left: `calc(${confidenceIndex * 100}% - 8px)` }}
+              ></div>
+            </div>
+            <div className="flex justify-between text-sm text-gray-400">
+              <span>Low</span>
+              <span>
+                Moderate Confidence - There's room to improve your consistency
+                and mindset.
+              </span>
+              <span>High</span>
+            </div>
+          </div>
+          {/* Cumulative P&L and Top Trades */}
+          <div className="flex md:flex-row flex-col gap-6">
+            {/* Cumulative P&L Section with Chart */}
+            <div className=" w-3/4 bg-slate-800 p-6 rounded-lg shadow-md min-h-[400px] flex flex-col">
+              <h3 className="text-lg font-semibold text-gray-200 mb-4">
+                Cumulative P&L
+              </h3>
+              {cumulativePnlData.length > 0 ? (
+                <>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <LineChart
+                      data={cumulativePnlData}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#4a5568" />{" "}
+                      {/* Darker grid */}
+                      <XAxis
+                        dataKey="name"
+                        stroke="#cbd5e0"
+                        angle={-45}
+                        textAnchor="end"
+                        height={60}
+                        interval="preserveStartEnd"
+                      />
+                      <YAxis stroke="#cbd5e0" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "#2d3748",
+                          border: "1px solid #4a5568",
+                          borderRadius: "4px",
+                        }}
+                        itemStyle={{ color: "#cbd5e0" }}
+                        labelStyle={{ color: "#a0aec0" }}
+                        formatter={(value) =>
+                          `₹${value.toLocaleString("en-IN")}`
+                        }
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="pnl"
+                        stroke="#8884d8" // A distinct color for the line
+                        strokeWidth={2}
+                        dot={false} // Remove individual dots for a cleaner line
+                        activeDot={{
+                          r: 8,
+                          fill: "#8884d8",
+                          stroke: "#fff",
+                          strokeWidth: 2,
+                        }} // Active dot on hover
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                  {/* Total Cumulative P&L for display below the chart */}
+                  <p className="text-xl font-bold mt-4 text-center">
+                    Current Total:{" "}
+                    <span
+                      className={
+                        cumulativePnlData[cumulativePnlData.length - 1].pnl >= 0
+                          ? "text-green-400"
+                          : "text-red-400"
+                      }
+                    >
+                      ₹
+                      {cumulativePnlData[
+                        cumulativePnlData.length - 1
+                      ].pnl.toLocaleString("en-IN")}
+                    </span>
+                  </p>
+                </>
+              ) : (
+                <div className="flex-grow flex items-center justify-center text-gray-500">
+                  <p>
+                    No trade data available to generate cumulative P&L chart.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Top Trades Placeholder */}
+            <div className=" w-1/4 bg-slate-800 p-6 rounded-lg shadow-md min-h-[300px] flex flex-col justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-200 mb-4 flex justify-between items-center">
+                  Top Trades
+                  <Link
+                    href="/all-trades"
+                    className="text-blue-400 hover:underline text-sm"
+                  >
+                    View All
+                  </Link>
+                </h3>
+                <div className="space-y-3">
+                  {/* Example Top Trade (replace with actual data) */}
+                  {monthlyTrades
+                    .slice()
+                    // *** CHANGE HERE: Sort by pnlAmount ***
+                    .sort((a, b) => b.pnlAmount - a.pnlAmount)
+                    .slice(0, 3)
+                    .map((trade, index) => (
+                      <div
+                        key={index}
+                        className="flex justify-between items-center text-sm"
+                      >
+                        <div>
+                          <p className="text-gray-300 font-medium">
+                            {trade.instrument}
+                          </p>
+                          <p className="text-gray-500 text-xs">
+                            Entry: ₹{trade.entryPrice} Exit: ₹{trade.exitPrice}
+                          </p>
+                        </div>
+                        <p
+                          className={`font-semibold ${
+                            // *** CHANGE HERE: Check pnlAmount for color ***
+                            trade.pnlAmount >= 0
+                              ? "text-green-400"
+                              : "text-red-400"
+                          }`}
+                        >
+                          {/* *** CHANGE HERE: Display pnlAmount *** */}
+                          ₹{trade.pnlAmount.toLocaleString("en-IN")}
+                        </p>
+                      </div>
+                    ))}
+                  {monthlyTrades.length === 0 && (
+                    <p className="text-gray-500 text-sm">
+                      No trades this month to show top trades.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* New Trade Modal */}
+      {showNewTradeModal && (
+        <Modal onClose={() => setShowNewTradeModal(false)}>
+          {/* Make sure NewTradeEntryForm itself handles pnlAmount correctly */}
+          <NewTradeEntryForm addTrade={addTrade} />
+        </Modal>
+      )}
     </div>
   );
 };
 
-const InfoCard = ({ title, value, color = "text-gray-300" }) => (
-  <div className="bg-zinc-700 p-4 rounded-lg shadow-md">
-    <p className="text-lg font-medium text-white">{title}:</p>
-    <p className={`text-3xl font-bold ${color}`}>{value}</p>
+// Reusable Dashboard Card component (no changes needed here as it uses `value` prop)
+const DashboardCard = ({ title, value, valueColor, change }) => (
+  <div className="bg-slate-800 p-5 rounded-lg shadow-xl flex flex-col items-start justify-between relative overflow-hidden">
+    <div className="absolute top-0 right-0 p-3">
+      {/* Icon Placeholder - You can replace these with actual SVG icons */}
+      {title === "Higest P&L" && (
+        <span className="text-green-500 text-2xl">📈</span>
+      )}
+      {title === "Win Rate" && (
+        <span className="text-blue-500 text-2xl">🏆</span>
+      )}
+      {title === "Avg. Risk/Reward" && (
+        <span className="text-yellow-500 text-2xl">⚖️</span>
+      )}
+      {title === "Trades This Month" && (
+        <span className="text-purple-500 text-2xl">📊</span>
+      )}
+    </div>
+    <p className="text-sm text-gray-400 font-medium mb-1">{title}</p>
+    <p className={`text-3xl font-bold ${valueColor}`}>{value}</p>
+    {/* Placeholder for change vs last month */}
+    <p
+      className={`text-xs ${
+        change === "+" ? "text-green-400" : "text-red-400"
+      } mt-2`}
+    >
+      {change}10% vs last month{" "}
+      {/* This is a static placeholder. Needs actual calc. */}
+    </p>
   </div>
 );
 

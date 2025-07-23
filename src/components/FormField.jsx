@@ -2,7 +2,7 @@
 import React from 'react';
 
 export default function FormField({ label, id, type = 'text', placeholder, options, rows, step, min, max, value, onChange, className, children }) {
-  const inputClasses = "shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500";
+  const inputClasses = "shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-400 leading-tight ";
 
   let inputElement;
 
@@ -34,7 +34,7 @@ export default function FormField({ label, id, type = 'text', placeholder, optio
                             checked={value === option.value} // Use checked for controlled radio
                             onChange={onChange}
                         />
-                        <span className="ml-2 text-gray-700">{option.label}</span>
+                        <span className="ml-2 text-gray-400">{option.label}</span>
                     </label>
                 ))}
             </div>
@@ -80,12 +80,12 @@ export default function FormField({ label, id, type = 'text', placeholder, optio
   return (
     <div className={className}>
       {label && type !== 'file' && type !== 'radio-group' && ( // Don't render label for file input as it's part of inputElement
-        <label htmlFor={id} className="block text-gray-700 text-sm font-bold mb-2">
+        <label htmlFor={id} className="block text-gray-400 text-sm font-bold mb-2">
           {label}
         </label>
       )}
       {label && type === 'radio-group' && (
-        <label className="block text-gray-700 text-sm font-bold mb-2">
+        <label className="block text-gray-400 text-sm font-bold mb-2">
           {label}
         </label>
       )}
