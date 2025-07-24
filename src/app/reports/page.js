@@ -1,19 +1,20 @@
 import AppLayout from "@/components/AppLayout";
-import StrategyClient from "@/components/strategy/StrategyClient";
+import ReportClient from "@/components/ReportClient";
 import { getServerSession } from "next-auth";
+import { redirect } from "next/dist/server/api-utils";
 import React from "react";
 import { authOptions } from "utils/auth";
 
-const Strategies = async () => {
+const Reports = async () => {
   const session = await getServerSession(authOptions);
   if (!session) {
     redirect("/sign-in");
   }
   return (
-    <AppLayout>
-      <StrategyClient />
-    </AppLayout>
-  );
+     <AppLayout>
+        <ReportClient/>
+     </AppLayout>
+  )
 };
 
-export default Strategies;
+export default Reports;

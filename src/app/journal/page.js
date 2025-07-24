@@ -1,28 +1,27 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import NewTradeEntryForm from '../../components/NewTradeEntryForm';
-import JournalTradeHistoryTable from '../../components/JournalTradeHistoryTable';
-import TradePerformanceCharts from '../../components/TradePerformanceCharts';
-import TradePieCharts from '../../components/TradePieCharts';
-import TradeCalendar from '@/components/TradeCalender';
-
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import NewTradeEntryForm from "../../components/new-trade-entry-form/NewTradeEntryForm";
+import JournalTradeHistoryTable from "../../components/JournalTradeHistoryTable";
+import TradePerformanceCharts from "../../components/TradePerformanceCharts";
+import TradePieCharts from "../../components/TradePieCharts";
+import TradeCalendar from "@/components/calender/TradeCalender";
 
 export default function JournalPage() {
-  const [journalTab, setJournalTab] = useState('nt');
+  const [journalTab, setJournalTab] = useState("nt");
 
   const [tradeHistory, setTradeHistory] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const savedTrades = localStorage.getItem('tradeJournalData');
+    if (typeof window !== "undefined") {
+      const savedTrades = localStorage.getItem("tradeJournalData");
       return savedTrades ? JSON.parse(savedTrades) : [];
     }
     return [];
   });
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('tradeJournalData', JSON.stringify(tradeHistory));
+    if (typeof window !== "undefined") {
+      localStorage.setItem("tradeJournalData", JSON.stringify(tradeHistory));
     }
   }, [tradeHistory]);
 
@@ -61,19 +60,19 @@ export default function JournalPage() {
         {/* Tabs */}
         <div className="flex flex-wrap border-b border-gray-200 mb-6">
           {[
-            { key: 'nt', label: 'New Trade Entry' },
-            { key: 'pd', label: 'Previous Data (History)' },
-            { key: 'charts', label: 'Charts' },
-            { key: 'pie', label: 'Pie Charts' },
-            { key: 'calendar', label: 'Calendar' }, // ✅ NEW TAB
+            { key: "nt", label: "New Trade Entry" },
+            { key: "pd", label: "Previous Data (History)" },
+            { key: "charts", label: "Charts" },
+            { key: "pie", label: "Pie Charts" },
+            { key: "calendar", label: "Calendar" }, // ✅ NEW TAB
           ].map((tab) => (
             <button
               key={tab.key}
               onClick={() => setJournalTab(tab.key)}
               className={`py-3 px-4 md:px-6 text-base md:text-lg font-medium ${
                 journalTab === tab.key
-                  ? 'border-b-4 border-blue-600 text-blue-600'
-                  : 'text-gray-600 hover:text-gray-800'
+                  ? "border-b-4 border-blue-600 text-blue-600"
+                  : "text-gray-600 hover:text-gray-800"
               } focus:outline-none transition duration-300`}
             >
               {tab.label}
@@ -82,17 +81,15 @@ export default function JournalPage() {
         </div>
 
         {/* Tab Content */}
-        {journalTab === 'nt' && (
-          <NewTradeEntryForm addTrade={addTrade} />
-        )}
-        {journalTab === 'pd' && (
+        {journalTab === "nt" && <NewTradeEntryForm addTrade={addTrade} />}
+        {journalTab === "pd" && (
           <JournalTradeHistoryTable
             initialCapital={initialCapital}
             currentCapital={currentCapital}
             tradeHistory={tradeHistory}
           />
         )}
-        {journalTab === 'charts' && (
+        {journalTab === "charts" && (
           <>
             <h3 className="text-xl md:text-2xl font-bold text-gray-800 mt-8 mb-6">
               Trade Performance Analysis Charts
@@ -100,7 +97,7 @@ export default function JournalPage() {
             <TradePerformanceCharts tradeHistory={tradeHistory} />
           </>
         )}
-        {journalTab === 'pie' && (
+        {journalTab === "pie" && (
           <>
             <h3 className="text-xl md:text-2xl font-bold text-gray-800 mt-8 mb-6">
               Trade Distribution Pie Charts
@@ -108,7 +105,7 @@ export default function JournalPage() {
             <TradePieCharts tradeHistory={tradeHistory} />
           </>
         )}
-        {journalTab === 'calendar' && (
+        {journalTab === "calendar" && (
           <>
             <h3 className="text-xl md:text-2xl font-bold text-gray-800 mt-8 mb-6">
               Trade Calendar Overview

@@ -1,4 +1,3 @@
-// components/StrategyTradesModal.jsx
 import React from "react";
 
 export default function StrategyTradesModal({ strategyName, trades, onClose }) {
@@ -112,9 +111,9 @@ export default function StrategyTradesModal({ strategyName, trades, onClose }) {
                       </td>
                       <td
                         className="px-6 py-3 max-w-xs truncate"
-                        title={trade.notes}
+                        title={trade.tradNotes}
                       >
-                        {trade.notes || "-"}
+                        {trade.tradeNotes || "-"}
                       </td>
                     </tr>
                   ))}

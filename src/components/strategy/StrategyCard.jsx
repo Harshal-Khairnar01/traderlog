@@ -1,4 +1,4 @@
-// components/StrategyCard.jsx
+
 import React from 'react';
 
 export default function StrategyCard({ strategyName, usage, profitFactor, totalProfit, winRate, riskPerTrade, onViewDetailsClick }) {
