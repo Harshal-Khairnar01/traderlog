@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import FormField from "./FormField";
 import { toast } from "react-toastify";
 
-export default function NewTradeEntryForm({ addTrade, onClose }) {
+export default function NewTradeEntryForm({ addTrade, updateTrade, onClose, tradeToEdit }) {
   const [activeTab, setActiveTab] = useState("General");
   const [formData, setFormData] = useState({
     marketType: "Indian",
@@ -17,13 +17,13 @@ export default function NewTradeEntryForm({ addTrade, onClose }) {
     exitPrice: "",
     pnlAmount: "",
     pnlPercentage: "",
-    direction: "Long",
+    direction: "Long", // Existing
+    optionType: "", // New: To store 'Call' or 'Put'
     stopLoss: "",
     target: "",
     strategy: "Select Strategy",
     outcomeSummary: "Select Outcome Summary",
     tradeAnalysis: "",
-
     emotionsBefore: "Calm",
     emotionsAfter: "Satisfied",
     tradeNotes: "",
@@ -32,26 +32,119 @@ export default function NewTradeEntryForm({ addTrade, onClose }) {
     whatDidWell: "",
     tags: "",
     screenshotUpload: null,
+    charges: "",
+    // Add confidenceLevel with a default if it's a new trade or not present in tradeToEdit
+    confidenceLevel: "5",
   });
 
+  // Effect to populate form when tradeToEdit changes (for edit functionality)
+  useEffect(() => {
+    if (tradeToEdit) {
+      setFormData({
+        marketType: tradeToEdit.marketType || "Indian",
+        symbol: tradeToEdit.symbol || "",
+        date: tradeToEdit.date || "",
+        time: tradeToEdit.time || "",
+        entryPrice: tradeToEdit.entryPrice || "",
+        quantity: tradeToEdit.quantity || "",
+        totalAmount: tradeToEdit.totalAmount || "",
+        exitPrice: tradeToEdit.exitPrice || "",
+        pnlAmount: tradeToEdit.pnlAmount || "",
+        pnlPercentage: tradeToEdit.pnlPercentage || "",
+        direction: tradeToEdit.direction || "Long",
+        optionType: tradeToEdit.optionType || "",
+        stopLoss: tradeToEdit.stopLoss || "",
+        target: tradeToEdit.target || "",
+        strategy: tradeToEdit.strategy || "Select Strategy",
+        outcomeSummary: tradeToEdit.outcomeSummary || "Select Outcome Summary",
+        tradeAnalysis: tradeToEdit.tradeAnalysis || "",
+        emotionsBefore: tradeToEdit.emotionsBefore || "Calm",
+        emotionsAfter: tradeToEdit.emotionsAfter || "Satisfied",
+        tradeNotes: tradeToEdit.tradeNotes || "",
+        mistakes: tradeToEdit.mistakes || "",
+        mistakeChecklist: tradeToEdit.mistakeChecklist || [],
+        whatDidWell: tradeToEdit.whatDidWell || "",
+        tags: tradeToEdit.tags || "",
+        // Note: screenshotUpload won't be pre-filled for security reasons with file inputs.
+        // You'd typically display the existing filename or a preview.
+        screenshotUpload: null,
+        charges: tradeToEdit.charges || "",
+        confidenceLevel: tradeToEdit.confidenceLevel || "5",
+      });
+    }
+  }, [tradeToEdit]);
+
+  // Effect to calculate Total Amount
+  useEffect(() => {
+    const entry = parseFloat(formData.entryPrice);
+    const qty = parseFloat(formData.quantity);
+
+    let calculatedTotalAmount = "";
+
+    if (!isNaN(entry) && !isNaN(qty) && qty > 0) {
+      calculatedTotalAmount = (entry * qty).toFixed(2);
+    }
+
+    // Only update if the calculated value is different to avoid unnecessary re-renders
+    if (formData.totalAmount !== calculatedTotalAmount) {
+      setFormData((prev) => ({
+        ...prev,
+        totalAmount: calculatedTotalAmount,
+      }));
+    }
+  }, [formData.entryPrice, formData.quantity, formData.totalAmount]);
+
+  // Effect to calculate P&L Amount and Percentage
   useEffect(() => {
     const entry = parseFloat(formData.entryPrice);
     const exit = parseFloat(formData.exitPrice);
-    const pnlAmt = parseFloat(formData.pnlAmount);
+    const pnlAmtManual = parseFloat(formData.pnlAmount); // This might be used if P&L is manually entered
     const totalAmt = parseFloat(formData.totalAmount);
+    const charges = parseFloat(formData.charges) || 0; // Get charges, default to 0 if not a number
 
+    let calculatedPnlAmount = "";
     let calculatedPnlPercentage = "";
 
-    if (!isNaN(entry) && !isNaN(exit) && entry !== 0) {
+    // Calculate gross P&L first if entry, exit prices, and quantity are available
+    if (!isNaN(entry) && !isNaN(exit) && !isNaN(parseFloat(formData.quantity)) && parseFloat(formData.quantity) > 0) {
+      const qty = parseFloat(formData.quantity);
+      let grossPnl;
       if (formData.direction === "Long") {
-        calculatedPnlPercentage = (((exit - entry) / entry) * 100).toFixed(2);
-      } else {
-        calculatedPnlPercentage = (((entry - exit) / entry) * 100).toFixed(2);
+        grossPnl = (exit - entry) * qty;
+      } else { // Short
+        grossPnl = (entry - exit) * qty;
       }
-    } else if (!isNaN(pnlAmt) && !isNaN(totalAmt) && totalAmt !== 0) {
-      calculatedPnlPercentage = ((pnlAmt / totalAmt) * 100).toFixed(2);
+
+      // Subtract charges for net P&L
+      const netPnl = grossPnl - charges;
+      calculatedPnlAmount = netPnl.toFixed(2);
+
+      // Calculate P&L percentage based on net P&L
+      if (!isNaN(totalAmt) && totalAmt !== 0) {
+        calculatedPnlPercentage = ((netPnl / totalAmt) * 100).toFixed(2);
+      }
+    } else if (!isNaN(pnlAmtManual) && !isNaN(totalAmt) && totalAmt !== 0) {
+      // If manual P&L amount is entered, calculate net P&L from it and then percentage
+      const netPnl = pnlAmtManual - charges;
+      calculatedPnlAmount = netPnl.toFixed(2);
+      calculatedPnlPercentage = ((netPnl / totalAmt) * 100).toFixed(2);
+    } else {
+      // If no valid calculation, reset values
+      calculatedPnlAmount = "";
+      calculatedPnlPercentage = "";
     }
 
+    // Update pnlAmount only if it changes
+    // Check if the current formData.pnlAmount is already a number to prevent overriding
+    // a manually entered (and thus likely desired) value with an empty string
+    if (formData.pnlAmount !== calculatedPnlAmount) {
+      setFormData((prev) => ({
+        ...prev,
+        pnlAmount: calculatedPnlAmount,
+      }));
+    }
+
+    // Update pnlPercentage only if it changes
     if (formData.pnlPercentage !== calculatedPnlPercentage) {
       setFormData((prev) => ({
         ...prev,
@@ -62,17 +155,21 @@ export default function NewTradeEntryForm({ addTrade, onClose }) {
     formData.entryPrice,
     formData.exitPrice,
     formData.direction,
-    formData.pnlAmount,
+    formData.quantity,
+    formData.pnlAmount, // Dependency for manual P&L calculation path
     formData.totalAmount,
     formData.pnlPercentage,
+    formData.charges,
   ]);
 
   const handleChange = (e) => {
-    const { id, value, type, name } = e.target;
+    const { id, value, type, name } = e.target; // 'name' is important for radio buttons
+
+    // Handle radio button groups using the 'name' attribute
     if (type === "radio") {
       setFormData((prevData) => ({
         ...prevData,
-        [name]: value,
+        [name]: value, // Use 'name' to update the correct state property (e.g., 'direction', 'optionType')
       }));
     } else if (type === "file") {
       setFormData((prevData) => ({
@@ -80,6 +177,7 @@ export default function NewTradeEntryForm({ addTrade, onClose }) {
         [id]: e.target.files[0],
       }));
     } else {
+      // For all other input types, use 'id' to update the state
       setFormData((prevData) => ({
         ...prevData,
         [id]: value,
@@ -109,92 +207,147 @@ export default function NewTradeEntryForm({ addTrade, onClose }) {
       }
     }
 
-    const tradeEntry = {
+    const tradeDataToSave = {
       ...formData,
       quantity: Number(formData.quantity),
       entryPrice: Number(formData.entryPrice),
       exitPrice: formData.exitPrice ? Number(formData.exitPrice) : null,
       totalAmount: formData.totalAmount ? Number(formData.totalAmount) : null,
-      pnlAmount: formData.pnlAmount ? Number(formData.pnlAmount) : null,
+      pnlAmount: formData.pnlAmount ? Number(formData.pnlAmount) : null, // This is now net P&L
       pnlPercentage: formData.pnlPercentage
         ? Number(formData.pnlPercentage)
         : null,
       stopLoss: formData.stopLoss ? Number(formData.stopLoss) : null,
       target: formData.target ? Number(formData.target) : null,
+      charges: formData.charges ? Number(formData.charges) : null, // Store charges as a number
       screenshotUpload: formData.screenshotUpload
         ? formData.screenshotUpload.name
-        : null,
+        : (tradeToEdit?.screenshotUpload || null), // Retain existing screenshot name if no new file is uploaded
+      confidenceLevel: Number(formData.confidenceLevel), // Ensure it's a number
     };
 
-    addTrade(tradeEntry);
+    if (tradeToEdit) {
+      // If tradeToEdit exists, it's an edit operation
+      updateTrade({ ...tradeDataToSave, id: tradeToEdit.id }); // Pass the ID for updating
+      toast.success("Trade updated successfully!");
+    } else {
+      // Otherwise, it's a new trade operation
+      addTrade(tradeDataToSave);
+      toast.success("Trade submitted and added to history!");
+    }
 
-    setFormData({
-      marketType: "Indian",
-      symbol: "",
-      date: "",
-      time: "",
-      entryPrice: "",
-      quantity: "",
-      totalAmount: "",
-      exitPrice: "",
-      pnlAmount: "",
-      pnlPercentage: "",
-      direction: "Long",
-      stopLoss: "",
-      target: "",
-      strategy: "Select Strategy",
-      outcomeSummary: "Select Outcome Summary",
-      tradeAnalysis: "",
-      emotionsBefore: "Calm",
-      emotionsAfter: "Satisfied",
-      tradeNotes: "",
-      mistakes: "",
-      mistakeChecklist: [],
-      whatDidWell: "",
-      tags: "",
-      screenshotUpload: null,
-    });
+    // Reset form after submission (only for new trades, or if you want to clear after edit)
+    // For edit, you might want to close the form instead of resetting.
+    if (!tradeToEdit) { // Only reset if it was a new trade
+      setFormData({
+        marketType: "Indian",
+        symbol: "",
+        date: "",
+        time: "",
+        entryPrice: "",
+        quantity: "",
+        totalAmount: "",
+        exitPrice: "",
+        pnlAmount: "",
+        pnlPercentage: "",
+        direction: "Long",
+        optionType: "", // Reset optionType
+        stopLoss: "",
+        target: "",
+        strategy: "Select Strategy",
+        outcomeSummary: "Select Outcome Summary",
+        tradeAnalysis: "",
+        emotionsBefore: "Calm",
+        emotionsAfter: "Satisfied",
+        tradeNotes: "",
+        mistakes: "",
+        mistakeChecklist: [],
+        whatDidWell: "",
+        tags: "",
+        screenshotUpload: null,
+        charges: "",
+        confidenceLevel: "5",
+      });
+    }
 
-    toast.success("Trade submitted and added to history!");
     if (onClose) {
       onClose();
     }
   };
 
   const handleReset = () => {
-    setFormData({
-      marketType: "Indian",
-      symbol: "",
-      date: "",
-      time: "",
-      entryPrice: "",
-      quantity: "",
-      totalAmount: "",
-      exitPrice: "",
-      pnlAmount: "",
-      pnlPercentage: "",
-      direction: "Long",
-      stopLoss: "",
-      target: "",
-      strategy: "Select Strategy",
-      outcomeSummary: "Select Outcome Summary",
-      tradeAnalysis: "",
-      emotionsBefore: "Calm",
-      emotionsAfter: "Satisfied",
-      tradeNotes: "",
-      mistakes: "",
-      mistakeChecklist: [],
-      whatDidWell: "",
-      tags: "",
-      screenshotUpload: null,
-    });
-    toast.info("Form reset!");
+    // If editing, reset to original tradeToEdit values, otherwise to empty
+    if (tradeToEdit) {
+      setFormData({
+        marketType: tradeToEdit.marketType || "Indian",
+        symbol: tradeToEdit.symbol || "",
+        date: tradeToEdit.date || "",
+        time: tradeToEdit.time || "",
+        entryPrice: tradeToEdit.entryPrice || "",
+        quantity: tradeToEdit.quantity || "",
+        totalAmount: tradeToEdit.totalAmount || "",
+        exitPrice: tradeToEdit.exitPrice || "",
+        pnlAmount: tradeToEdit.pnlAmount || "",
+        pnlPercentage: tradeToEdit.pnlPercentage || "",
+        direction: tradeToEdit.direction || "Long",
+        optionType: tradeToEdit.optionType || "",
+        stopLoss: tradeToEdit.stopLoss || "",
+        target: tradeToEdit.target || "",
+        strategy: tradeToEdit.strategy || "Select Strategy",
+        outcomeSummary: tradeToEdit.outcomeSummary || "Select Outcome Summary",
+        tradeAnalysis: tradeToEdit.tradeAnalysis || "",
+        emotionsBefore: tradeToEdit.emotionsBefore || "Calm",
+        emotionsAfter: tradeToEdit.emotionsAfter || "Satisfied",
+        tradeNotes: tradeToEdit.tradeNotes || "",
+        mistakes: tradeToEdit.mistakes || "",
+        mistakeChecklist: tradeToEdit.mistakeChecklist || [],
+        whatDidWell: tradeToEdit.whatDidWell || "",
+        tags: tradeToEdit.tags || "",
+        screenshotUpload: null, // Cannot reset file input to previous file
+        charges: tradeToEdit.charges || "",
+        confidenceLevel: tradeToEdit.confidenceLevel || "5",
+      });
+      toast.info("Form reset to original values!");
+    } else {
+      setFormData({
+        marketType: "Indian",
+        symbol: "",
+        date: "",
+        time: "",
+        entryPrice: "",
+        quantity: "",
+        totalAmount: "",
+        exitPrice: "",
+        pnlAmount: "",
+        pnlPercentage: "",
+        direction: "Long",
+        optionType: "", // Reset optionType
+        stopLoss: "",
+        target: "",
+        strategy: "Select Strategy",
+        outcomeSummary: "Select Outcome Summary",
+        tradeAnalysis: "",
+        emotionsBefore: "Calm",
+        emotionsAfter: "Satisfied",
+        tradeNotes: "",
+        mistakes: "",
+        mistakeChecklist: [],
+        whatDidWell: "",
+        tags: "",
+        screenshotUpload: null,
+        charges: "",
+        confidenceLevel: "5",
+      });
+      toast.info("Form reset!");
+    }
   };
 
   return (
     <div className="bg-zinc-800 rounded-lg shadow-xl text-white w-full h-[calc(100vh-80px)] flex flex-col">
       <div className="flex justify-between items-center px-6 py-3 border-b border-zinc-700">
-        <h2 className="text-xl font-semibold text-gray-100">Add New Trade</h2>
+        <h2 className="text-xl font-semibold text-gray-100">
+          {tradeToEdit ? "Edit Trade" : "Add New Trade"}
+        </h2>
         {onClose && (
           <button
             onClick={onClose}
@@ -289,11 +442,10 @@ export default function NewTradeEntryForm({ addTrade, onClose }) {
                 <FormField
                   label="Total Amount"
                   id="totalAmount"
-                  type="number"
-                  step="0.01"
+                  type="text" // Made text as it's read-only and formatted
                   placeholder="Amount"
                   value={formData.totalAmount}
-                  onChange={handleChange}
+                  readOnly // Keep it read-only
                 />
               </div>
               <FormField
@@ -310,70 +462,120 @@ export default function NewTradeEntryForm({ addTrade, onClose }) {
             <div className="col-span-full grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4">
               <div className="flex gap-2">
                 <FormField
-                  label="P&L Amount"
+                  label="P&L Amount (Net)"
                   id="pnlAmount"
-                  type="number"
+                  type="text" // Made text as it's auto-calculated
                   step="0.01"
-                  placeholder="Amount"
+                  placeholder="Net P&L"
                   value={formData.pnlAmount}
-                  onChange={handleChange}
+                  readOnly // Make it read-only
                 />
                 <FormField
-                  label="P&L (%)"
+                  label="P&L (%) (Net)"
                   id="pnlPercentage"
-                  type="text"
+                  type="text" // Made text as it's auto-calculated
                   placeholder="% Change"
                   value={formData.pnlPercentage}
-                  onChange={handleChange}
+                  readOnly
                 />
               </div>
+
+              {/* Combined Direction and Option Type Section */}
               <div className="col-span-1">
                 <label className="block text-sm font-medium text-gray-400 mb-2">
-                  Direction
+                  Trade Type
                 </label>
-                <div className="flex space-x-2 sm:space-x-4">
-                  <button
-                    type="button"
-                    className={`px-4 py-2 rounded-md font-semibold text-sm transition-colors duration-200 w-1/2 ${
-                      formData.direction === "Long"
-                        ? "bg-green-600 text-white"
-                        : "bg-zinc-700 text-gray-300 hover:bg-zinc-600"
-                    }`}
-                    onClick={() =>
-                      handleChange({
-                        target: {
-                          id: "direction",
-                          value: "Long",
-                          type: "radio",
-                          name: "direction",
-                        },
-                      })
-                    }
-                  >
-                    <span className="mr-1">↑</span> Long
-                  </button>
-                  <button
-                    type="button"
-                    className={`px-4 py-2 rounded-md font-semibold text-sm w-1/2 transition-colors duration-200 ${
-                      formData.direction === "Short"
-                        ? "bg-red-600 text-white"
-                        : "bg-zinc-700 text-gray-300 hover:bg-zinc-600"
-                    }`}
-                    onClick={() =>
-                      handleChange({
-                        target: {
-                          id: "direction",
-                          value: "Short",
-                          type: "radio",
-                          name: "direction",
-                        },
-                      })
-                    }
-                  >
-                    <span className="mr-1">↓</span> Short
-                  </button>
+                <div className="flex gap-4 w-full"> {/* Use flex-col to stack groups */}
+                  <div className="flex gap-1 items-center w-1/2 "> {/* Long/Short group */}
+                    <button
+                      type="button"
+                      className={`px-1 py-2 rounded-md font-semibold text-sm transition-colors duration-200 w-1/2 ${
+                        formData.direction === "Long"
+                          ? "bg-green-600 text-white"
+                          : "bg-zinc-700 text-gray-300 hover:bg-zinc-600"
+                      }`}
+                      onClick={() =>
+                        handleChange({
+                          target: {
+                            id: "direction", // Still using id for consistent formField naming
+                            value: "Long",
+                            type: "radio",
+                            name: "direction", // Crucial for radio groups
+                          },
+                        })
+                      }
+                    >
+                      <span className="">↑</span> Long
+                    </button>
+                    <button
+                      type="button"
+                      className={`px-1 py-2 rounded-md font-semibold text-sm w-1/2 transition-colors duration-200 ${
+                        formData.direction === "Short"
+                          ? "bg-red-600 text-white"
+                          : "bg-zinc-700 text-gray-300 hover:bg-zinc-600"
+                      }`}
+                      onClick={() =>
+                        handleChange({
+                          target: {
+                            id: "direction", // Still using id
+                            value: "Short",
+                            type: "radio",
+                            name: "direction", // Crucial for radio groups
+                          },
+                        })
+                      }
+                    >
+                      <span className="">↓</span> Short
+                    </button>
+                  </div>
+
+                  {/* Call/Put Group (Visible only if a direction is selected, or always if you prefer) */}
+                  {/* You might add a condition here if Call/Put is only for specific Market Types */}
+                  <div className="flex gap-1 items-center w-1/2 "> {/* Call/Put group, added mt-2 for spacing */}
+                    <button
+                      type="button"
+                      className={`px-4 py-2 rounded-md font-semibold text-sm transition-colors duration-200 w-1/2 ${
+                        formData.optionType === "Call"
+                          ? "bg-blue-600 text-white"
+                          : "bg-zinc-700 text-gray-300 hover:bg-zinc-600"
+                      }`}
+                      onClick={() =>
+                        handleChange({
+                          target: {
+                            id: "optionType", // Use optionType for this state
+                            value: "Call",
+                            type: "radio",
+                            name: "optionType", // New name for this radio group
+                          },
+                        })
+                      }
+                    >
+                      Call
+                    </button>
+                    <button
+                      type="button"
+                      className={`px-4 py-2 rounded-md font-semibold text-sm w-1/2 transition-colors duration-200 ${
+                        formData.optionType === "Put"
+                          ? "bg-purple-600 text-white"
+                          : "bg-zinc-700 text-gray-300 hover:bg-zinc-600"
+                      }`}
+                      onClick={() =>
+                        handleChange({
+                          target: {
+                            id: "optionType", // Use optionType for this state
+                            value: "Put",
+                            type: "radio",
+                            name: "optionType", // New name for this radio group
+                          },
+                        })
+                      }
+                    >
+                      Put
+                    </button>
+                  </div>
                 </div>
               </div>
+
               <div className="flex gap-2">
                 <FormField
                   label="Stop Loss"
@@ -395,6 +597,17 @@ export default function NewTradeEntryForm({ addTrade, onClose }) {
                 />
               </div>
             </div>
+
+            {/* New FormField for Charges */}
+            <FormField
+              label="Charges/Brokerage"
+              id="charges"
+              type="number"
+              step="0.01"
+              placeholder="e.g., 25.50"
+              value={formData.charges}
+              onChange={handleChange}
+            />
 
             <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
@@ -581,6 +794,11 @@ export default function NewTradeEntryForm({ addTrade, onClose }) {
                 type="file"
                 onChange={handleChange}
               />
+              {tradeToEdit && tradeToEdit.screenshotUpload && (
+                <div className="text-sm text-gray-400">
+                  Current Screenshot: {tradeToEdit.screenshotUpload}
+                </div>
+              )}
               <FormField
                 label="Tags"
                 id="tags"
@@ -607,7 +825,7 @@ export default function NewTradeEntryForm({ addTrade, onClose }) {
           onClick={handleSubmit}
           className="px-6 py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors duration-200"
         >
-          Save Trade
+          {tradeToEdit ? "Update Trade" : "Save Trade"}
         </button>
       </div>
     </div>
