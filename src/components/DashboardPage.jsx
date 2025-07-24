@@ -240,6 +240,20 @@ const DashboardPage = ({ session }) => {
     return data;
   }, [tradeHistory]);
 
+  const topProfitTrades = useMemo(() => {
+    return [...monthlyTrades]
+      .filter((trade) => trade.pnlAmount > 0)
+      .sort((a, b) => b.pnlAmount - a.pnlAmount)
+      .slice(0, 3);
+  }, [monthlyTrades]);
+
+  const topLosingTrades = useMemo(() => {
+    return [...monthlyTrades]
+      .filter((trade) => trade.pnlAmount < 0)
+      .sort((a, b) => a.pnlAmount - b.pnlAmount)
+      .slice(0, 3);
+  }, [monthlyTrades]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-zinc-800 p-4 flex items-center justify-center">
@@ -257,7 +271,7 @@ const DashboardPage = ({ session }) => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center p-4 sm:p-6 lg:p-8">
+    <div className="  min-h-screen bg-slate-900 text-white flex flex-col items-center p-4 sm:p-6 lg:p-8">
       <div className="w-full max-w-7xl flex justify-between items-center mb-6 ">
         <div className=" w-full flex items-center space-x-4 relative justify-between ">
           <select className="bg-slate-800 border border-slate-700 rounded px-3 py-1 text-sm text-gray-200">
@@ -321,7 +335,7 @@ const DashboardPage = ({ session }) => {
           {" "}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <DashboardCard
-              title="Higest P&L"
+              title="Highest P&L"
               value={`₹${highestPnl.toLocaleString("en-IN")}`}
               valueColor={highestPnl >= 0 ? "text-green-400" : "text-red-400"}
               change="+"
@@ -442,10 +456,11 @@ const DashboardPage = ({ session }) => {
               )}
             </div>
 
-            <div className=" w-1/4 bg-slate-800 p-6 rounded-lg shadow-md min-h-[300px] flex flex-col justify-between">
-              <div>
+            {/* Start of the new Top Trades layout */}
+            <div className="w-1/4 flex flex-col gap-6">
+              <div className="bg-slate-800 p-6 rounded-lg shadow-md flex-1">
                 <h3 className="text-lg font-semibold text-gray-200 mb-4 flex justify-between items-center">
-                  Top Trades
+                  Top 3 Profit Trades
                   <Link
                     href="/all-trades"
                     className="text-blue-400 hover:underline text-sm"
@@ -454,11 +469,8 @@ const DashboardPage = ({ session }) => {
                   </Link>
                 </h3>
                 <div className="space-y-3">
-                  {monthlyTrades
-                    .slice()
-                    .sort((a, b) => b.pnlAmount - a.pnlAmount)
-                    .slice(0, 3)
-                    .map((trade, index) => (
+                  {topProfitTrades.length > 0 ? (
+                    topProfitTrades.map((trade, index) => (
                       <div
                         key={index}
                         className="flex justify-between items-center text-sm"
@@ -468,28 +480,63 @@ const DashboardPage = ({ session }) => {
                             {trade.instrument}
                           </p>
                           <p className="text-gray-500 text-xs">
-                            Entry: ₹{trade.entryPrice} Exit: ₹{trade.exitPrice}
+                            Entry: ₹{trade.entryPrice} Exit: ₹
+                            {trade.exitPrice}
                           </p>
                         </div>
-                        <p
-                          className={`font-semibold ${
-                            trade.pnlAmount >= 0
-                              ? "text-green-400"
-                              : "text-red-400"
-                          }`}
-                        >
+                        <p className="font-semibold text-green-400">
                           ₹{trade.pnlAmount.toLocaleString("en-IN")}
                         </p>
                       </div>
-                    ))}
-                  {monthlyTrades.length === 0 && (
+                    ))
+                  ) : (
                     <p className="text-gray-500 text-sm">
-                      No trades this month to show top trades.
+                      No profit trades this month.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-slate-800 p-6 rounded-lg shadow-md flex-1">
+                <h3 className="text-lg font-semibold text-gray-200 mb-4 flex justify-between items-center">
+                  Top 3 Losing Trades
+                  <Link
+                    href="/all-trades"
+                    className="text-blue-400 hover:underline text-sm"
+                  >
+                    View All
+                  </Link>
+                </h3>
+                <div className="space-y-3">
+                  {topLosingTrades.length > 0 ? (
+                    topLosingTrades.map((trade, index) => (
+                      <div
+                        key={index}
+                        className="flex justify-between items-center text-sm"
+                      >
+                        <div>
+                          <p className="text-gray-300 font-medium">
+                            {trade.instrument}
+                          </p>
+                          <p className="text-gray-500 text-xs">
+                            Entry: ₹{trade.entryPrice} Exit: ₹
+                            {trade.exitPrice}
+                          </p>
+                        </div>
+                        <p className="font-semibold text-red-400">
+                          ₹{trade.pnlAmount.toLocaleString("en-IN")}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-sm">
+                      No losing trades this month.
                     </p>
                   )}
                 </div>
               </div>
             </div>
+            {/* End of the new Top Trades layout */}
           </div>
         </div>
       </div>
@@ -506,7 +553,7 @@ const DashboardPage = ({ session }) => {
 const DashboardCard = ({ title, value, valueColor, change }) => (
   <div className="bg-slate-800 p-5 rounded-lg shadow-xl flex flex-col items-start justify-between relative overflow-hidden">
     <div className="absolute top-0 right-0 p-3">
-      {title === "Higest P&L" && (
+      {title === "Highest P&L" && (
         <span className="text-green-500 text-2xl">📈</span>
       )}
       {title === "Win Rate" && (
