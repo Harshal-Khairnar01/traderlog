@@ -3,7 +3,7 @@ import { authOptions } from "utils/auth";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import AppLayout from "@/components/AppLayout";
-import AllTradesClientPage from "@/components/AllTradesClientPage"; 
+import AllTradesClientPage from "@/components/all-trades/AllTradesClientPage"; 
 
 export default async function AllTradesPage() {
   const session = await getServerSession(authOptions);
