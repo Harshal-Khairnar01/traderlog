@@ -31,7 +31,7 @@ const PsychologyReport = ({ tradeHistory }) => {
 
   return (
     <div className="p-4 space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 ">
         <MetricCard
           title="Emotional State (from Confidence)"
           icon={Heart}

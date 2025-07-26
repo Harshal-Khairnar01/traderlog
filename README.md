@@ -7,7 +7,9 @@ A personal trading journal application built with **Next.js**, **React**, and **
 ## ✨ Features
 
 ### 📝 New Trade Entry
+
 Log detailed information about each trade:
+
 - Date & Time, Symbol/Asset
 - Trade Type (Intraday, Swing, Positional, Scalping)
 - Direction (Buy/Sell), Quantity
@@ -19,10 +21,13 @@ Log detailed information about each trade:
 - Screenshot upload (UI ready, functionality placeholder)
 
 ### 💾 Persistent Trade Data
+
 - All trades are saved locally in `localStorage` for session persistence.
 
 ### 📊 Performance & Psychology Analytics
+
 Comprehensive charts to visualize trade data:
+
 - Net P&L by Post-Trade Emotion
 - Average Net P&L by Setup
 - Win Rate & Avg P&L by Day of Week
@@ -33,10 +38,12 @@ Comprehensive charts to visualize trade data:
 - Mistake Frequency Tracking
 
 ### 📋 Trade History & All Trades View
+
 - Chronological, color-coded trade history
 - Full data table with hoverable detailed cells
 
 ### 📈 Dashboard Overview
+
 - Displays key metrics:
   - Initial Capital
   - Total Trades
@@ -45,25 +52,38 @@ Comprehensive charts to visualize trade data:
   - Net P&L
 
 ### 🧑‍💻 Personalized UX
+
 - Prompts for your name on first visit
 - Stored in `localStorage` for a custom welcome
 
 ### 📱 Responsive Design
+
 - Mobile-friendly and optimized with Tailwind CSS
 
+### 🛠️ Tools Page
+
+Access a suite of trading calculators and utilities to enhance your trading workflow:
+
+- **Position Size Calculator**: Calculate optimal position size based on risk and stop loss.
+- **Risk/Reward Calculator**: Analyze potential risk and reward for trades.
+- **Compounding Calculator**: Visualize account growth with compounding returns.
+- **Simple Returns Calculator**: Quickly compute simple returns for trades or periods.
+- **Trading Plan Checklist**: Ensure discipline with a customizable trading plan checklist.
+
+All tools are accessible from the Tools page and are designed for ease of use, with results displayed instantly and no data sent to any server.
+
 ### 🧩 Reusable Components
+
 - DRY design using shared components like `FormField`
 
 ---
 
 ## 🚀 Technologies Used
 
-- **Next.js 14+** – Full-stack React framework  
-- **React.js** – UI library  
-- **Tailwind CSS** – Utility-first CSS framework  
-- **Recharts** – Charting components for React  
+- **Next.js 14+** – Full-stack React framework
+- **React.js** – UI library
+- **Tailwind CSS** – Utility-first CSS framework
+- **Recharts** – Charting components for React
 - **localStorage** – Client-side data persistence
 
 ---
-
-
