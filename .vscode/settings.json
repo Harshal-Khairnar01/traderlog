@@ -1,0 +1,61 @@
+{
+    "[typescript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.formatOnSave": true,
+      "editor.formatOnPaste": true,
+      "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit"
+      },
+      "editor.tabSize": 2,
+      "editor.insertSpaces": true,
+      "editor.detectIndentation": false,
+      "editor.trimAutoWhitespace": true,
+      "editor.wordWrap": "off",
+      "editor.wrappingIndent": "none",
+      "editor.renderWhitespace": "none",
+      "editor.cursorSmoothCaretAnimation": "on",
+      "editor.renderControlCharacters": false,
+      "editor.autoIndent": "advanced"
+    },
+    "[typescriptreact]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.formatOnSave": true,
+      "editor.formatOnPaste": true,
+      "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit"
+      }
+    },
+    "[javascript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.formatOnSave": true,
+      "editor.formatOnPaste": true,
+      "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit"
+      },
+      "editor.tabSize": 2,
+      "editor.insertSpaces": true,
+      "editor.detectIndentation": false,
+      "editor.trimAutoWhitespace": true,
+      "editor.wordWrap": "off",
+      "editor.wrappingIndent": "none",
+      "editor.renderWhitespace": "none",
+      "editor.cursorSmoothCaretAnimation": "on",
+      "editor.renderControlCharacters": false,
+      "editor.autoIndent": "advanced"
+    },
+    "[javascriptreact]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.formatOnSave": true,
+      "editor.formatOnPaste": true,
+      "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit"
+      }
+    },
+    "prettier.trailingComma": "all",
+    "prettier.tabWidth": 2,
+    "prettier.semi": false,
+    "prettier.singleQuote": true,
+    "prettier.printWidth": 80,
+    "prettier.arrowParens": "always"
+  }
+  

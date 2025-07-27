@@ -4,57 +4,74 @@ generator client {
 }
 
 datasource db {
-  provider = "mongodb"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id             String          @id @default(auto()) @map("_id") @db.ObjectId
+  id             Int              @id @default(autoincrement())
   name           String?
-  email          String          @unique
+  email          String           @unique
   password       String
-  initialCapital Float           @default(0)
+  initialCapital Float            @default(0)
   trades         Trade[]
   capitalLogs    CapitalChange[]
-  createdAt      DateTime        @default(now())
-  
+  createdAt      DateTime         @default(now())
 }
 
 model Trade {
-  id                     String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId                 String   @db.ObjectId
+  id                     Int        @id @default(autoincrement())
+  userId                 Int
+  marketType             String     // e.g., "Indian"
+  symbol                 String     // e.g., RELIANCE, NIFTY 50
   date                   DateTime
-  symbol                 String
-  tradeType              String
-  direction              String
+  time                   String?    // Stored as "HH:mm" format
+  entryPrice             Float
+  exitPrice              Float
   quantity               Int
-  riskReward             Float
-  stopLossPts            Float
-  targetPts              Float
-  exitReason             String?
+  totalAmount            Float
+  stopLoss               Float
+  target                 Float
+  tradeType              String     // e.g., "Call", "Put"
+  direction              String     // "Long" or "Short"
   grossPnl               Float
   netPnl                 Float
+  pnlPercentage          Float
+  riskReward             Float
   charges                Float?
   strategyUsed           String?
-  setupName              String?
-  confirmationIndicators String?
-  confidenceLevel        Int?
-  emotionsBefore         String?
-  emotionsAfter          String?
-  notes                  String?
-  mistakes               String?
-  mistakeChecklist       String[] @default([])
-  tags                   String[] @default([])
+  outcomeSummary         String?
+  tradeAnalysis          String?
+  tags                   String[]   @default([])
 
-  user User @relation(fields: [userId], references: [id])
+  // Optional Psychology Entry
+  psychology             Psychology?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Psychology {
+  id               Int        @id @default(autoincrement())
+  tradeId          Int        @unique
+  confidenceLevel  Int        // 1-10
+  emotionsBefore   String?
+  emotionsAfter    String?
+  notes            String?    // Trade notes / journal
+  mistakes         String?    // What went wrong
+  mistakeChecklist String[]   @default([])
+  whatIDidWell     String?    // Positive actions
+  tags             String[]   @default([])
+  screenshotUrl    String?
+
+  trade Trade @relation(fields: [tradeId], references: [id], onDelete: Cascade)
 }
 
 model CapitalChange {
-  id     String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId String   @db.ObjectId
+  id     Int      @id @default(autoincrement())
+  userId Int
   amount Float
   reason String?
   date   DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
