@@ -1,39 +1,39 @@
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import { ToastContainer } from "react-toastify";
-import { SessionProvider } from "./providers";
+import { Geist, Geist_Mono } from 'next/font/google'
+import './globals.css'
+import { ToastContainer } from 'react-toastify'
+import { SessionProvider } from './providers'
 
 const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
+})
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
+})
 
 export const metadata = {
-  title: "Trade Trackerrr - Track Your Trading Performance",
+  title: 'X-journal - Track Your Trading Performance',
   description:
-    "A personal trade journal and analysis dashboard to track, analyze, and improve your trading performance across stocks, crypto, and forex.",
+    'A personal trade journal and analysis dashboard to track, analyze, and improve your trading performance across stocks, crypto, and forex.',
   keywords: [
-    "trade journal",
-    "trading dashboard",
-    "trading analysis",
-    "stock market",
-    "forex",
-    "crypto",
-    "trading performance",
-    "day trading",
-    "pnl tracker",
+    'trade journal',
+    'trading dashboard',
+    'trading analysis',
+    'stock market',
+    'forex',
+    'crypto',
+    'trading performance',
+    'day trading',
+    'pnl tracker',
   ],
 
   openGraph: {
-    title: "Trade Journal Dashboard",
-    description: "Track, analyze, and improve your trading performance.",
-    url: "https://trade-trackerrr.vercel.app/",
-    siteName: "TradeTrackerr",
+    title: 'Trade Journal Dashboard',
+    description: 'Track, analyze, and improve your trading performance.',
+    url: 'https://trade-trackerrr.vercel.app/',
+    siteName: 'TradeTrackerr',
     // images: [
     //   {
     //     url: "https://your-trade-journal-app.com/og-image.jpg",
@@ -42,10 +42,10 @@ export const metadata = {
     //     alt: "Trade Journal Dashboard Screenshot",
     //   },
     // ],
-    locale: "en_US",
-    type: "website",
+    locale: 'en_US',
+    type: 'website',
   },
-};
+}
 
 export default function RootLayout({ children }) {
   return (
@@ -68,5 +68,5 @@ export default function RootLayout({ children }) {
         />
       </body>
     </html>
-  );
+  )
 }

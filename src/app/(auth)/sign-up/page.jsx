@@ -55,7 +55,7 @@ export default function SignUp() {
             }}
           ></div>
           <div className="relative z-10 flex justify-between items-start">
-            <div className="text-xl font-bold text-white">Powered by AI</div>
+            <div className="text-xl font-bold text-white"></div>
 
             <Link
               href="/sign-in"
@@ -73,7 +73,7 @@ export default function SignUp() {
           <h1 className="text-4xl font-bold mb-2">Create an account</h1>
           <p className="text-gray-400 mb-8 text-sm">
             Already have an account?{' '}
-            <a href="#" className="text-[#8E2DE2] hover:underline">
+            <a href="/sign-in" className="text-[#8E2DE2] hover:underline">
               Log in
             </a>
           </p>

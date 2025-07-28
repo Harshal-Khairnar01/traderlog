@@ -57,7 +57,7 @@ const LoginForm = () => {
             }}
           ></div>
           <div className="relative z-10 flex justify-between items-start">
-            <div className="text-xl font-bold text-white">Powered by AI</div>
+            <div className="text-xl font-bold text-white"></div>
             <Link
               href="/sign-up"
               className="flex items-center text-white text-sm px-3 py-1 rounded-full border border-white hover:bg-white hover:text-[#4A00B0] transition-colors"
@@ -74,7 +74,7 @@ const LoginForm = () => {
           <h1 className="text-4xl font-bold mb-2">Log in to your account</h1>
           <p className="text-gray-400 mb-8 text-sm">
             Don't have an account?{' '}
-            <a href="#" className="text-[#8E2DE2] hover:underline">
+            <a href="/sign-up" className="text-[#8E2DE2] hover:underline">
               Sign up
             </a>
           </p>
@@ -154,17 +154,6 @@ const LoginForm = () => {
                 />
               </svg>
               Google
-            </button>
-            <button className="flex-1 flex items-center justify-center bg-[#3A3A5E] text-white p-3 rounded-xl font-semibold hover:bg-[#4A4A6E] transition-colors shadow-md">
-              {/* Apple Icon SVG */}
-              <svg
-                className="w-5 h-5 mr-2"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path d="M17.5 11.08c-.07-2.02 1.39-3.33 2.52-4.08-1.12-1.64-2.82-2.15-4.52-2.19-2.22-.05-4.42 1.25-5.59 1.25-1.18 0-2.65-1.17-4.14-1.11-2.02.08-3.93 1.13-4.93 2.92-.95 1.72-.85 4.19.46 6.09 1.02 1.5 2.56 3.01 4.41 3.06 1.7.05 2.37-1.13 4.14-1.13 1.77 0 2.28 1.13 4.14 1.08 1.85-.05 3.19-1.39 4.21-2.89.94-1.39 1.3-2.65 1.34-2.78-.02-.01-2.73-1.07-2.79-4.22zm-3.5 10.08c.84-.96 1.48-2.13 1.39-3.44-1.21.04-2.66.77-3.54 1.72-.78.84-1.42 2.02-1.34 3.33 1.22-.05 2.67-.77 3.49-1.61z" />
-              </svg>
-              Apple
             </button>
           </div>
         </form>
