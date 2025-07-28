@@ -9,14 +9,17 @@ datasource db {
 }
 
 model User {
-  id             Int              @id @default(autoincrement())
-  name           String?
-  email          String           @unique
-  password       String
-  initialCapital Float            @default(0)
-  trades         Trade[]
-  capitalLogs    CapitalChange[]
-  createdAt      DateTime         @default(now())
+  id              Int              @id @default(autoincrement())
+  firstName       String?
+  lastName        String
+  agreedToTerms   Boolean          @default(false)
+  agreedAt        DateTime?
+  email           String           @unique
+  password        String
+  initialCapital  Float            @default(0)
+  trades          Trade[]
+  capitalLogs     CapitalChange[]
+  createdAt       DateTime         @default(now())
 }
 
 model Trade {
