@@ -1,6 +1,6 @@
 'use client'
 import React, { useState } from 'react'
-import { Eye, EyeOff, ChevronRight } from 'lucide-react' // Using lucide-react for icons
+import { Eye, EyeOff, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
@@ -66,7 +66,6 @@ export default function SignUp() {
           </div>
         </div>
 
-        {/* Right Section - Create Account Form */}
         <form
           className="lg:w-1/2 p-8 lg:p-12 flex flex-col justify-center"
           onSubmit={handleSubmit(onSubmit)}
@@ -79,7 +78,6 @@ export default function SignUp() {
             </a>
           </p>
 
-          {/* Form Fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <input
               {...register('firstName')}

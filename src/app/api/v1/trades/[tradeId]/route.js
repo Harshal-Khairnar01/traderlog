@@ -1,4 +1,4 @@
-import { getTrade } from './[tradeId]/getTrade'
+import { getTrade } from './getTrade'
 
 export async function GET(request) {
   return getTrade(request)
