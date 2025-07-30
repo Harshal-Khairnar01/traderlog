@@ -24,6 +24,7 @@ const DashboardPage = ({ session }) => {
   const userInitial = userName.charAt(0).toUpperCase();
 
   const { tradeHistory, isLoading, error, addTrade } = useTradeData(session);
+  console.log(tradeHistory, isLoading, error,"hshshh");
 
   const {
     highestPnl,
@@ -35,6 +36,15 @@ const DashboardPage = ({ session }) => {
     topLosingTrades,
     averageConfidenceLevel,
   } = useTradeCalculations(tradeHistory);
+
+  console.log(  highestPnl,
+    winRate,
+    avgRiskReward,
+    tradesThisMonthCount,
+    cumulativePnlData,
+    topProfitTrades,
+    topLosingTrades,
+    averageConfidenceLevel,"pppppppp")
 
   useEffect(() => {
     const handleClickOutside = (event) => {
