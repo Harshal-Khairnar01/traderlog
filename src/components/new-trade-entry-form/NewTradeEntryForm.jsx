@@ -1,34 +1,36 @@
 // src/components/new-trade-entry-form/NewTradeEntryForm.jsx
-"use client";
+'use client'
 
-import React, { useState } from "react";
-import GeneralTabContent from "./GeneralTabContent";
-import PsychologyTabContent from "./PsychologyTabContent";
-import { useTradeFormLogic } from "@/hooks/useTradeFormLogic";
+import React, { useState } from 'react'
+import GeneralTabContent from './GeneralTabContent'
+import PsychologyTabContent from './PsychologyTabContent'
+import { useTradeFormLogic } from '@/hooks/useTradeFormLogic'
 
 export default function NewTradeEntryForm({
-  addTrade,
-  updateTrade,
-  onClose,
+  addTrade, // This prop
+  updateTrade, // This prop
+  onClose, // This prop
   tradeToEdit,
 }) {
-  const [activeTab, setActiveTab] = useState("General");
+  const [activeTab, setActiveTab] = useState('General')
 
+  // IMPORTANT CHANGE HERE: Pass addTrade, updateTrade, onClose to the hook
   const {
     formData,
     handleChange,
     handleCheckboxChange,
     handleSubmit,
     handleReset,
-  } = useTradeFormLogic(tradeToEdit);
+  } = useTradeFormLogic(tradeToEdit, addTrade, updateTrade, onClose) // <--- HERE
 
-  const onSubmit = (e) => handleSubmit(e, addTrade, updateTrade, onClose);
+  // The onSubmit function no longer needs to pass these as arguments
+  const onSubmit = (e) => handleSubmit(e)
 
   return (
     <div className="bg-zinc-800 rounded-lg shadow-xl text-white w-full h-[calc(100vh-80px)] flex flex-col">
       <div className="flex justify-between items-center px-6 py-3 border-b border-zinc-700">
         <h2 className="text-xl font-semibold text-gray-100">
-          {tradeToEdit ? "Edit Trade" : "Add New Trade"}
+          {tradeToEdit ? 'Edit Trade' : 'Add New Trade'}
         </h2>
         {onClose && (
           <button
@@ -44,21 +46,21 @@ export default function NewTradeEntryForm({
       <div className="flex border-b border-zinc-700 px-6 py-2">
         <button
           className={`px-4 py-2 text-sm font-medium ${
-            activeTab === "General"
-              ? "border-b-2 border-blue-500 text-blue-400"
-              : "text-gray-400 hover:text-gray-200"
+            activeTab === 'General'
+              ? 'border-b-2 border-blue-500 text-blue-400'
+              : 'text-gray-400 hover:text-gray-200'
           }`}
-          onClick={() => setActiveTab("General")}
+          onClick={() => setActiveTab('General')}
         >
           General
         </button>
         <button
           className={`px-4 py-2 text-sm font-medium ${
-            activeTab === "Psychology"
-              ? "border-b-2 border-blue-500 text-blue-400"
-              : "text-gray-400 hover:text-gray-200"
+            activeTab === 'Psychology'
+              ? 'border-b-2 border-blue-500 text-blue-400'
+              : 'text-gray-400 hover:text-gray-200'
           }`}
-          onClick={() => setActiveTab("Psychology")}
+          onClick={() => setActiveTab('Psychology')}
         >
           Psychology
         </button>
@@ -68,11 +70,11 @@ export default function NewTradeEntryForm({
         className="flex-grow space-y-6 px-6 py-2 overflow-y-auto scrollbar scrollbar-thumb-zinc-600 scrollbar-track-zinc-700 scrollbar-w-2"
         onSubmit={onSubmit}
       >
-        {activeTab === "General" && (
+        {activeTab === 'General' && (
           <GeneralTabContent formData={formData} handleChange={handleChange} />
         )}
 
-        {activeTab === "Psychology" && (
+        {activeTab === 'Psychology' && (
           <PsychologyTabContent
             formData={formData}
             handleChange={handleChange}
@@ -95,9 +97,9 @@ export default function NewTradeEntryForm({
           onClick={onSubmit}
           className="px-6 py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors duration-200"
         >
-          {tradeToEdit ? "Update Trade" : "Save Trade"}
+          {tradeToEdit ? 'Update Trade' : 'Save Trade'}
         </button>
       </div>
     </div>
-  );
+  )
 }
