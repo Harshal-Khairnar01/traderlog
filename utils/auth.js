@@ -4,7 +4,6 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import { getServerSession } from 'next-auth'
 import { compare } from 'bcrypt'
 
-
 export const authOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -55,10 +54,10 @@ export const authOptions = {
     },
     async jwt({ token, user, trigger, session }) {
       if (user) {
-        ;(token.id = user.id),
-          (token.email = user.email),
-          (token.name = user.name),
-          (token.initialCapital = user.initialCapital ?? 0)
+        token.id = user.id,
+        token.email = user.email,
+        token.name = `${user.firstName} ${user.lastName}`,
+        token.initialCapital = user.initialCapital ?? 0
       }
 
       if (trigger === 'update' && session?.name) {
@@ -67,7 +66,7 @@ export const authOptions = {
       if (trigger === 'update' && session?.initialCapital !== undefined) {
         token.initialCapital = session.initialCapital
       }
-      return token
+      return token;
     },
   },
 }
