@@ -1,30 +1,35 @@
-"use client";
+'use client'
 
-import React, { useState, useEffect, useRef } from "react";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import React, { useState, useEffect, useRef } from 'react'
+import 'react-toastify/dist/ReactToastify.css'
 
-import { useTradeData } from "@/hooks/useTradeData";
-import { useTradeCalculations } from "@/hooks/useTradeCalculations";
+import { useSession } from 'next-auth/react'
 
-import DashboardHeader from "@/components/dashboard/DashboardHeader";
-import DashboardCards from "@/components/dashboard/DashboardCards";
-import PnlChart from "@/components/dashboard/PnlChart";
-import TopTrades from "@/components/dashboard/TopTrades";
-import TradingConfidenceIndex from "@/components/challenge/TradingConfidenceIndex";
-import TradeEntryModal from "@/components/dashboard/TradeEntryModal";
+import { useTradeCalculations } from '@/hooks/useTradeCalculations'
 
-const DashboardPage = ({ session }) => {
-  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
-  const [showNewTradeModal, setShowNewTradeModal] = useState(false);
+import DashboardHeader from '@/components/dashboard/DashboardHeader'
+import DashboardCards from '@/components/dashboard/DashboardCards'
+import PnlChart from '@/components/dashboard/PnlChart'
+import TopTrades from '@/components/dashboard/TopTrades'
+import TradingConfidenceIndex from '@/components/challenge/TradingConfidenceIndex'
+import TradeEntryModal from '@/components/dashboard/TradeEntryModal'
+import { useTrades } from '@/hooks/useTrades'
+import Loader from '../Loader'
 
-  const profileDropdownRef = useRef(null);
+const DashboardPage = () => {
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false)
+  const [showNewTradeModal, setShowNewTradeModal] = useState(false)
 
-  const userName = session?.user?.name || "Guest";
-  const userInitial = userName.charAt(0).toUpperCase();
+  const profileDropdownRef = useRef(null)
 
-  const { tradeHistory, isLoading, error, addTrade } = useTradeData(session);
-  console.log(tradeHistory, isLoading, error,"hshshh");
+  const { data: session, status } = useSession()
+
+  const { tradeHistory, loading: isLoading, error, addTrade } = useTrades()
+
+  const userName = session?.user?.name || 'Guest'
+  const userInitial = userName.charAt(0).toUpperCase()
+
+  console.log(tradeHistory, 'ttt')
 
   const {
     highestPnl,
@@ -35,16 +40,7 @@ const DashboardPage = ({ session }) => {
     topProfitTrades,
     topLosingTrades,
     averageConfidenceLevel,
-  } = useTradeCalculations(tradeHistory);
-
-  console.log(  highestPnl,
-    winRate,
-    avgRiskReward,
-    tradesThisMonthCount,
-    cumulativePnlData,
-    topProfitTrades,
-    topLosingTrades,
-    averageConfidenceLevel,"pppppppp")
+  } = useTradeCalculations(tradeHistory)
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -52,37 +48,42 @@ const DashboardPage = ({ session }) => {
         profileDropdownRef.current &&
         !profileDropdownRef.current.contains(event.target)
       ) {
-        setShowProfileDropdown(false);
+        setShowProfileDropdown(false)
       }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
+    }
+    document.addEventListener('mousedown', handleClickOutside)
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
 
-  if (isLoading) {
+  if (status === 'loading') return <Loader message="Loading session..." />
+
+  if (status === 'unauthenticated') {
     return (
-      <div className="min-h-screen bg-zinc-800 p-4 flex items-center justify-center">
-        <div className="text-gray-200 text-lg">Loading your trade data...</div>
+      <div className="min-h-screen bg-slate-800 p-4 flex items-center justify-center">
+        <div className="text-red-500 text-lg">
+          You must be logged in to view this page.
+        </div>
       </div>
-    );
+    )
   }
+
+  if (isLoading) return <Loader message="Loading your trade data..." />
 
   if (error) {
     return (
-      <div className="min-h-screen bg-zinc-800 p-4 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-800 p-4 flex items-center justify-center">
         <div className="text-red-500 text-lg">Error: {error}</div>
       </div>
-    );
+    )
   }
 
   const displayConfidenceLevel =
-    tradeHistory.length > 0 ? averageConfidenceLevel : 0.5;
+    tradeHistory.length > 0 ? averageConfidenceLevel : 0.5
 
   return (
     <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center p-4 sm:p-6 lg:p-8">
-      <ToastContainer position="bottom-right" />
       <DashboardHeader
         userInitial={userInitial}
         showNewTradeModal={showNewTradeModal}
@@ -118,7 +119,7 @@ const DashboardPage = ({ session }) => {
         onAddTrade={addTrade}
       />
     </div>
-  );
-};
+  )
+}
 
-export default DashboardPage;
+export default DashboardPage

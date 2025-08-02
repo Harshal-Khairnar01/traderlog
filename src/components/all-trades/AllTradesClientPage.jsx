@@ -7,7 +7,8 @@ import "react-toastify/dist/ReactToastify.css";
 import Link from "next/link";
 import AllTradesTable from "@/components/all-trades/AllTradesTable";
 import NewTradeEntryForm from "@/components/new-trade-entry-form/NewTradeEntryForm";
-import { useTradeJournal } from "@/hooks/useTradeJournal";
+import { useTrades } from "@/hooks/useTrades";
+import Loader from "../Loader";
 
 export default function AllTradesClientPage() {
   const {
@@ -17,8 +18,8 @@ export default function AllTradesClientPage() {
     addTrade,
     updateTrade,
     deleteTrade,
-    loadTrades,
-  } = useTradeJournal();
+    fetchTradeHistory:loadTrades,
+  } = useTrades()
 
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [tradeToEdit, setTradeToEdit] = useState(null);
@@ -71,12 +72,7 @@ export default function AllTradesClientPage() {
     });
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <p className="text-gray-300 text-lg">Loading trade history...</p>
-      </div>
-    );
+  if (loading) {return <Loader message="Loading your trade history..." />
   }
 
   if (error) {
@@ -118,5 +114,5 @@ export default function AllTradesClientPage() {
         </div>
       )}
     </div>
-  );
+  )
 }

@@ -1,14 +1,13 @@
-
-import React from 'react';
-import { Eye, Edit, Trash2 } from "lucide-react";
-import { getSlTargetColorClass, getRowClass } from "@/utils/tradeTableHelpers";
+import React from 'react'
+import { Eye, Edit, Trash2 } from 'lucide-react'
+import { getSlTargetColorClass, getRowClass } from '@/utils/tradeTableHelpers'
 
 export default function TradesTableBody({
   groupedTrades,
   openDetailedModal,
   openTruncatedContentModal,
   handleEditClick,
-  handleDeleteClick
+  handleDeleteClick,
 }) {
   return (
     <tbody className="divide-y divide-zinc-700">
@@ -17,10 +16,16 @@ export default function TradesTableBody({
           {group.trades?.map((trade, tradeIdx) => (
             <tr
               key={trade.id || `${trade.date}-${trade.time}-${trade.symbol}`}
-              className={`${getRowClass(tradeIdx)} hover:bg-zinc-600 transition-colors duration-150`}
+              className={`${getRowClass(
+                tradeIdx,
+              )}  transition-colors duration-150`}
             >
               <td className="px-4 py-3 text-sm text-gray-200 whitespace-nowrap">
-                {trade.date}
+                {new Date(trade.date).toLocaleDateString('en-GB', {
+                  day: '2-digit',
+                  month: 'short',
+                  year: 'numeric',
+                })}
               </td>
               <td className="px-4 py-3 text-sm text-gray-200 whitespace-nowrap">
                 {trade.symbol || trade.instrument}
@@ -28,32 +33,32 @@ export default function TradesTableBody({
               <td className="px-4 py-3 text-sm text-gray-200 whitespace-nowrap">
                 <div className="flex flex-col">
                   <span className="text-gray-200 font-medium">
-                    {trade.marketType || "N/A"}
+                    {trade.marketType || 'N/A'}
                   </span>
                   <span className="text-gray-400 text-xs">
-                    {trade.optionType || "N/A"}
+                    {trade.optionType || 'N/A'}
                   </span>
                 </div>
               </td>
               <td className="px-4 py-3 text-sm whitespace-nowrap">
                 <span
                   className={`inline-flex items-center justify-center px-2 py-0.5 rounded-sm font-semibold ${
-                    trade.direction === "Long"
-                      ? "bg-green-700 text-white"
-                      : "bg-red-700 text-white"
+                    trade.direction === 'Long'
+                      ? 'bg-green-700 text-white'
+                      : 'bg-red-700 text-white'
                   }`}
                 >
                   {trade.direction}
                 </span>
               </td>
               <td className="px-4 py-3 text-sm text-gray-200 whitespace-nowrap">
-                {trade.quantity || "N/A"}
+                {trade.quantity || 'N/A'}
               </td>
               <td className="px-4 py-3 text-sm text-gray-200 whitespace-nowrap">
                 <div className="flex flex-col">
-                  <span>{trade.entryPrice || "N/A"}</span>
+                  <span>{trade.entryPrice || 'N/A'}</span>
                   <span className="text-gray-400 text-xs">
-                    {trade.exitPrice || "N/A"}
+                    {trade.exitPrice || 'N/A'}
                   </span>
                 </div>
               </td>
@@ -62,63 +67,67 @@ export default function TradesTableBody({
                   <span
                     className={`${
                       (trade.pnlAmount || trade.netPnl || 0) >= 0
-                        ? "text-green-500"
-                        : "text-red-500"
+                        ? 'text-green-500'
+                        : 'text-red-500'
                     } font-semibold`}
                   >
-                    {(trade.pnlAmount || trade.netPnl || 0) >= 0 ? "+" : ""}
-                    {(trade.pnlAmount || trade.netPnl || 0)?.toFixed(2) || "0.00"}
+                    {(trade.pnlAmount || trade.netPnl || 0) >= 0 ? '+' : ''}
+                    {(trade.pnlAmount || trade.netPnl || 0)?.toFixed(2) ||
+                      '0.00'}
                   </span>
                   <span
                     className={`${
                       (trade.pnlPercentage || 0) >= 0
-                        ? "text-green-500"
-                        : "text-red-500"
+                        ? 'text-green-500'
+                        : 'text-red-500'
                     } text-xs`}
                   >
-                    {(trade.pnlPercentage || 0) >= 0 ? "+" : ""}
-                    {(trade.pnlPercentage || 0)?.toFixed(2) || "0.00"}%
+                    {(trade.pnlPercentage || 0) >= 0 ? '+' : ''}
+                    {(trade.pnlPercentage || 0)?.toFixed(2) || '0.00'}%
                   </span>
                 </div>
               </td>
               <td className="px-4 py-3 text-sm text-gray-200 whitespace-nowrap">
-                {trade.charges?.toFixed(2) || "0.00"}
+                {trade.charges?.toFixed(2) || '0.00'}
               </td>
               <td className="px-4 py-3 text-sm text-gray-200 whitespace-nowrap">
-                {trade.riskReward || "N/A"}
-              </td>
-              <td
-                className="px-4 py-3 text-sm text-gray-200 max-w-[8rem] truncate cursor-pointer hover:underline"
-                onClick={() =>
-                  openTruncatedContentModal("Strategy", trade.strategy || "N/A")
-                }
-              >
-                {trade.strategy || "-"}
+                {trade.riskReward || 'N/A'}
               </td>
               <td
                 className="px-4 py-3 text-sm text-gray-200 max-w-[8rem] truncate cursor-pointer hover:underline"
                 onClick={() =>
                   openTruncatedContentModal(
-                    "Outcome Summary",
-                    trade.outcomeSummary || "N/A"
+                    'Strategy',
+                    trade.strategyUsed || 'N/A',
                   )
                 }
               >
-                {trade.outcomeSummary || "-"}
+                {trade.strategyUsed || '-'}
+              </td>
+              <td
+                className="px-4 py-3 text-sm text-gray-200 max-w-[8rem] truncate cursor-pointer hover:underline"
+                onClick={() =>
+                  openTruncatedContentModal(
+                    'Outcome Summary',
+                    trade.outcomeSummary || 'N/A',
+                  )
+                }
+              >
+                {trade.outcomeSummary || '-'}
               </td>
               <td className="px-4 py-3 text-sm whitespace-nowrap">
                 <div className="flex flex-col">
-                  <span className={getSlTargetColorClass(trade, "SL")}>
-                    SL: {trade.stopLoss || "N/A"}
+                  <span className={getSlTargetColorClass(trade, 'SL')}>
+                    SL: {trade.stopLoss || 'N/A'}
                   </span>
-                  <span className={getSlTargetColorClass(trade, "Target")}>
-                    Target: {trade.target || "N/A"}
+                  <span className={getSlTargetColorClass(trade, 'Target')}>
+                    Target: {trade.target || 'N/A'}
                   </span>
                   <span className="text-gray-200">
-                    Total Amt: {trade.totalAmount || "N/A"}
+                    Total Amt: {trade.totalAmount || 'N/A'}
                   </span>
                   <span className="text-gray-400 text-xs">
-                    Conf: {trade.confidenceLevel || "N/A"}
+                    Conf: {trade.confidenceLevel || 'N/A'}
                   </span>
                 </div>
               </td>
@@ -142,7 +151,10 @@ export default function TradesTableBody({
                     className="text-red-500 hover:text-red-400 transition-colors duration-150"
                     title="Delete"
                     onClick={() =>
-                      handleDeleteClick(trade.id, trade.symbol || trade.instrument)
+                      handleDeleteClick(
+                        trade.id,
+                        trade.symbol || trade.instrument,
+                      )
                     }
                   >
                     <Trash2 className="h-5 w-5" />
@@ -154,5 +166,5 @@ export default function TradesTableBody({
         </React.Fragment>
       ))}
     </tbody>
-  );
+  )
 }
