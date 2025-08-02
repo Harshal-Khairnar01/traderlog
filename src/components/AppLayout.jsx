@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { redirect, usePathname } from 'next/navigation'
 import LeftSidebar from '@/components/LeftSideBar'
 import Loader from './Loader'
+import { Menu } from 'lucide-react'
 
 const AppLayout = ({ children }) => {
   const { data: session, status } = useSession()
@@ -29,7 +30,7 @@ const AppLayout = ({ children }) => {
       {sidebarOpen && (
         <>
           <div
-            className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
+            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
           <div className="fixed inset-y-0 left-0 z-50 w-64 bg-slate-950 border-r border-slate-800 shadow-lg lg:hidden">
@@ -38,33 +39,20 @@ const AppLayout = ({ children }) => {
         </>
       )}
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col w-full">
         {session && (
-          <div className="lg:hidden p-4">
+          <div className="lg:hidden p-2">
             <button
               onClick={() => setSidebarOpen(true)}
               className="text-gray-200 rounded bg-slate-800 p-2"
               aria-label="Open sidebar"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
+              <Menu className="h-6 w-6" />
             </button>
           </div>
         )}
 
-        <main className="flex-1  overflow-auto">{children}</main>
+        <main className="flex-1  w-full">{children}</main>
       </div>
     </div>
   )
