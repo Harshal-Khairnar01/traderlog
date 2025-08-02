@@ -52,29 +52,34 @@ export default function AllTradesTable({
   return (
     <div className="bg-zinc-900 p-4 rounded-lg shadow-inner ">
       {Object.keys(groupedTrades).length > 0 ? (
-        <div className="max-h-[85vh] overflow-y-auto overflow-x-auto custom-scrollbar">
-          <table className="min-w-full divide-y divide-zinc-700">
-            <thead className="bg-zinc-700 sticky top-0 z-10">
-              <tr>
-                {tableHeaders.map((header) => (
-                  <th
-                    key={header}
-                    className="px-4 py-3 text-left text-xs font-medium text-gray-300 whitespace-nowrap"
-                  >
-                    {header}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <TradesTableBody
-              groupedTrades={groupedTrades}
-              openDetailedModal={openDetailedModal}
-              openTruncatedContentModal={openTruncatedContentModal}
-              handleEditClick={handleEditClick}
-              handleDeleteClick={openConfirmation}
-            />
-          </table>
-        </div>
+        <>
+          <div className="md:hidden text-center text-gray-400 text-sm mb-2">
+            Swipe or scroll horizontally to see more details.
+          </div>
+          <div className="max-h-[85vh] overflow-y-auto overflow-x-auto custom-scrollbar">
+            <table className="min-w-full divide-y divide-zinc-700">
+              <thead className="bg-zinc-700 sticky top-0 z-10">
+                <tr>
+                  {tableHeaders.map((header) => (
+                    <th
+                      key={header}
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-300 whitespace-nowrap"
+                    >
+                      {header}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <TradesTableBody
+                groupedTrades={groupedTrades}
+                openDetailedModal={openDetailedModal}
+                openTruncatedContentModal={openTruncatedContentModal}
+                handleEditClick={handleEditClick}
+                handleDeleteClick={openConfirmation}
+              />
+            </table>
+          </div>
+        </>
       ) : (
         <p className="text-gray-400 text-center py-4">
           No trade history available.

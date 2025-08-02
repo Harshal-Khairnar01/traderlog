@@ -23,7 +23,6 @@ export default function AllTradesClientPage() {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
   const [tradeToEdit, setTradeToEdit] = useState(null)
 
-  // Load trades on mount
   useEffect(() => {
     dispatch(fetchTrades())
   }, [dispatch])
@@ -49,8 +48,7 @@ export default function AllTradesClientPage() {
     closeFormModal()
   }
 
-  const handleUpdateTrade = async (tradeId,payload) => {
-   
+  const handleUpdateTrade = async (tradeId, payload) => {
     await dispatch(updateTrade({ tradeId, payload }))
     closeFormModal()
   }
@@ -100,22 +98,26 @@ export default function AllTradesClientPage() {
     )
 
   return (
-    <div className=" min-h-screen bg-slate-900 text-white flex flex-col p-2 ">
-      <div className=" flex justify-between items-center mb-6 px-4 py-6">
-        <h2 className="text-3xl font-bold text-gray-200">All Trade Data</h2>
+    <div className=" min-h-screen bg-slate-900 text-white flex flex-col p-2 w-full  ">
+      <div className=" flex justify-between items-center mb-6 px-5 py-6">
+        <h2 className=" text-xl lg:text-3xl font-bold text-gray-200">
+          All Trade Data
+        </h2>
         <button
           onClick={openAddTradeForm}
-          className="px-6 py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors duration-200"
+          className="lg:px-6 lg:py-2 p-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors duration-200 text-sm lg:text-base"
         >
           Add New Trade
         </button>
       </div>
 
-      <AllTradesTable
-        groupedTrades={groupedTrades}
-        onDeleteTrade={handleDeleteTrade}
-        onEditTrade={openEditTradeForm}
-      />
+      <div className=" overflow-x-scroll">
+        <AllTradesTable
+          groupedTrades={groupedTrades}
+          onDeleteTrade={handleDeleteTrade}
+          onEditTrade={openEditTradeForm}
+        />
+      </div>
 
       {isFormModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 p-4">
