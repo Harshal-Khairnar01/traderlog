@@ -1,91 +1,107 @@
-// src/app/all-trades/AllTradesClientPage.jsx
-"use client";
+'use client'
 
-import React, { useState, useCallback } from "react";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import Link from "next/link";
-import AllTradesTable from "@/components/all-trades/AllTradesTable";
-import NewTradeEntryForm from "@/components/new-trade-entry-form/NewTradeEntryForm";
-import { useTrades } from "@/hooks/useTrades";
-import Loader from "../Loader";
+import React, { useState, useCallback, useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+import Link from 'next/link'
+import AllTradesTable from '@/components/all-trades/AllTradesTable'
+import NewTradeEntryForm from '@/components/new-trade-entry-form/NewTradeEntryForm'
+import Loader from '../Loader'
+import {
+  fetchTrades,
+  addTrade,
+  updateTrade,
+  deleteTrade,
+} from '@/store/tradesSlice'
 
 export default function AllTradesClientPage() {
-  const {
-    tradeHistory,
-    loading,
-    error,
-    addTrade,
-    updateTrade,
-    deleteTrade,
-    fetchTradeHistory:loadTrades,
-  } = useTrades()
+  const dispatch = useDispatch()
 
-  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [tradeToEdit, setTradeToEdit] = useState(null);
+  const { tradeHistory, loading, error } = useSelector((state) => state.trades)
+
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false)
+  const [tradeToEdit, setTradeToEdit] = useState(null)
+
+  // Load trades on mount
+  useEffect(() => {
+    dispatch(fetchTrades())
+  }, [dispatch])
 
   const openAddTradeForm = () => {
-    setTradeToEdit(null);
-    setIsFormModalOpen(true);
-  };
+    setTradeToEdit(null)
+    setIsFormModalOpen(true)
+  }
 
   const openEditTradeForm = useCallback((trade) => {
-    setTradeToEdit(trade);
-    setIsFormModalOpen(true);
-  }, []);
+    setTradeToEdit(trade)
+    setIsFormModalOpen(true)
+  }, [])
 
   const closeFormModal = () => {
-    setIsFormModalOpen(false);
-    setTradeToEdit(null);
-    loadTrades();
-  };
+    setIsFormModalOpen(false)
+    setTradeToEdit(null)
+    dispatch(fetchTrades())
+  }
+
+  const handleAddTrade = async (trade) => {
+    await dispatch(addTrade(trade))
+    closeFormModal()
+  }
+
+  const handleUpdateTrade = async (tradeId,payload) => {
+   
+    await dispatch(updateTrade({ tradeId, payload }))
+    closeFormModal()
+  }
+
+  const handleDeleteTrade = async (id) => {
+    await dispatch(deleteTrade(id))
+  }
 
   const sortedTradeHistory = [...tradeHistory].sort(
-    (a, b) => new Date(a.date) - new Date(b.date)
-  );
+    (a, b) => new Date(a.date) - new Date(b.date),
+  )
 
-  const groupedTrades = {};
+  const groupedTrades = {}
   const colors = [
-    "bg-gray-100",
-    "bg-blue-50",
-    "bg-green-50",
-    "bg-yellow-50",
-    "bg-red-50",
-    "bg-purple-50",
-  ];
+    'bg-gray-100',
+    'bg-blue-50',
+    'bg-green-50',
+    'bg-yellow-50',
+    'bg-red-50',
+    'bg-purple-50',
+  ]
 
   if (sortedTradeHistory.length > 0) {
-    const firstDate = new Date(sortedTradeHistory[0].date);
+    const firstDate = new Date(sortedTradeHistory[0].date)
     sortedTradeHistory.forEach((trade) => {
-      const tradeDate = new Date(trade.date);
-      const diffTime = Math.abs(tradeDate - firstDate);
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-      const groupIndex = Math.floor(diffDays / 3);
-      const groupKey = `group-${groupIndex}`;
+      const tradeDate = new Date(trade.date)
+      const diffTime = Math.abs(tradeDate - firstDate)
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+      const groupIndex = Math.floor(diffDays / 3)
+      const groupKey = `group-${groupIndex}`
       if (!groupedTrades[groupKey]) {
         groupedTrades[groupKey] = {
           color: colors[groupIndex % colors.length],
           trades: [],
-        };
+        }
       }
-      groupedTrades[groupKey].trades.push(trade);
-    });
+      groupedTrades[groupKey].trades.push(trade)
+    })
   }
 
-  if (loading) {return <Loader message="Loading your trade history..." />
-  }
-
-  if (error) {
+  if (loading) return <Loader message="Loading your trade history..." />
+  if (error)
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
         <p className="text-red-500 text-lg">{error}</p>
       </div>
-    );
-  }
+    )
 
   return (
-    <div className="min-h-screen bg-slate-900 relative p-8">
-      <div className="flex justify-between items-center mb-6">
+    <div className=" min-h-screen bg-slate-900 text-white flex flex-col p-2 ">
+      <div className=" flex justify-between items-center mb-6 px-4 py-6">
         <h2 className="text-3xl font-bold text-gray-200">All Trade Data</h2>
         <button
           onClick={openAddTradeForm}
@@ -97,7 +113,7 @@ export default function AllTradesClientPage() {
 
       <AllTradesTable
         groupedTrades={groupedTrades}
-        onDeleteTrade={deleteTrade}
+        onDeleteTrade={handleDeleteTrade}
         onEditTrade={openEditTradeForm}
       />
 
@@ -105,8 +121,8 @@ export default function AllTradesClientPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 p-4">
           <div className="relative bg-zinc-800 rounded-lg shadow-xl text-white w-full max-w-4xl max-h-[90vh] mx-auto flex flex-col">
             <NewTradeEntryForm
-              addTrade={addTrade}
-              updateTrade={updateTrade}
+              addTrade={handleAddTrade}
+              updateTrade={handleUpdateTrade}
               onClose={closeFormModal}
               tradeToEdit={tradeToEdit}
             />

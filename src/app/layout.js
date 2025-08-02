@@ -3,6 +3,7 @@ import './globals.css'
 import { ToastContainer } from 'react-toastify'
 import { SessionProvider } from './providers'
 import 'react-toastify/dist/ReactToastify.css'
+import { ReduxProvider } from './redux-providers'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -54,10 +55,11 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <SessionProvider>{children}</SessionProvider>
-        <ToastContainer
-          position="top-center"
-        />
+        <ReduxProvider>
+          <SessionProvider>{children}</SessionProvider>
+        </ReduxProvider>
+
+        <ToastContainer position="top-center" />
       </body>
     </html>
   )

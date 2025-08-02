@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { parseISO, isValid } from 'date-fns'
 
 export const useTradeCalculations = (tradeHistory) => {
   const currentMonth = new Date().getMonth()
@@ -6,8 +7,9 @@ export const useTradeCalculations = (tradeHistory) => {
 
   const monthlyTrades = useMemo(() => {
     return tradeHistory.filter((t) => {
-      const tradeDate = new Date(t.date)
+      const tradeDate = parseISO(t.date)
       return (
+        isValid(tradeDate) &&
         tradeDate.getMonth() === currentMonth &&
         tradeDate.getFullYear() === currentYear
       )
@@ -55,14 +57,20 @@ export const useTradeCalculations = (tradeHistory) => {
 
   const cumulativePnlData = useMemo(() => {
     if (tradeHistory.length === 0) return []
-    const sortedTrades = [...tradeHistory].sort(
-      (a, b) => a.dateTime.getTime() - b.dateTime.getTime(),
-    )
+    const validTrades = tradeHistory.filter((trade) => trade.dateTime !== null)
+    const sortedTrades = [...validTrades].sort((a, b) => {
+      const dateA = parseISO(a.dateTime)
+      const dateB = parseISO(b.dateTime)
+      if (!isValid(dateA) && !isValid(dateB)) return 0
+      if (!isValid(dateA)) return 1
+      if (!isValid(dateB)) return -1
+      return dateA.getTime() - dateB.getTime()
+    })
     let cumulativeSum = 0
     const data = sortedTrades.map((trade) => {
       cumulativeSum += trade.pnlAmount
       return {
-        name: `${trade.date} ${trade.time}`,
+        name: `${trade.date.split('T')[0]} ${trade.time}`,
         pnl: cumulativeSum,
       }
     })
@@ -88,7 +96,7 @@ export const useTradeCalculations = (tradeHistory) => {
     const totalConfidence = tradeHistory.reduce((sum, trade) => {
       return (
         sum +
-        (typeof trade.psychology.confidenceLevel === 'number'
+        (typeof trade.psychology?.confidenceLevel === 'number'
           ? trade.psychology.confidenceLevel
           : 0)
       )
