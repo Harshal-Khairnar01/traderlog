@@ -2,6 +2,34 @@ import React from 'react'
 import { Eye, Edit, Trash2 } from 'lucide-react'
 import { getSlTargetColorClass, getRowClass } from '@/utils/tradeTableHelpers'
 
+const getOptionTypeColorClass = (optionType, direction) => {
+  if (!optionType) {
+    return 'text-gray-400'
+  }
+  const normalizedType = optionType.toLowerCase()
+  const normalizedDirection = direction ? direction.toLowerCase() : null
+
+  if (normalizedDirection === 'long') {
+    if (normalizedType === 'call') {
+      return 'text-green-500 font-semibold'
+    }
+    if (normalizedType === 'put') {
+      return 'text-red-500 font-semibold'
+    }
+  }
+
+  if (normalizedDirection === 'short') {
+    if (normalizedType === 'call') {
+      return 'text-red-500 font-semibold'
+    }
+    if (normalizedType === 'put') {
+      return 'text-green-500 font-semibold'
+    }
+  }
+
+  return 'text-gray-400'
+}
+
 export default function TradesTableBody({
   groupedTrades,
   openDetailedModal,
@@ -17,7 +45,7 @@ export default function TradesTableBody({
               key={trade.id || `${trade.date}-${trade.time}-${trade.symbol}`}
               className={`${getRowClass(
                 tradeIdx,
-              )}  transition-colors duration-150`}
+              )} transition-colors duration-150`}
             >
               <td className="px-4 py-3 text-sm text-gray-200 whitespace-nowrap">
                 {new Date(trade.date).toLocaleDateString('en-GB', {
@@ -34,7 +62,12 @@ export default function TradesTableBody({
                   <span className="text-gray-200 font-medium">
                     {trade.marketType || 'N/A'}
                   </span>
-                  <span className="text-gray-400 text-xs">
+                  <span
+                    className={`text-xs ${getOptionTypeColorClass(
+                      trade.optionType,
+                      trade.direction,
+                    )}`}
+                  >
                     {trade.optionType || 'N/A'}
                   </span>
                 </div>
@@ -64,18 +97,17 @@ export default function TradesTableBody({
               <td className="px-4 py-3 text-sm whitespace-nowrap">
                 <div className="flex flex-col">
                   <span
-                    className={`$${
-                      (trade.pnlAmount || trade.netPnl || 0) >= 0
+                    className={`${
+                      (trade.netPnl || 0) >= 0
                         ? 'text-green-500'
                         : 'text-red-500'
                     } font-semibold`}
                   >
-                    {(trade.pnlAmount || trade.netPnl || 0) >= 0 ? '+' : ''}
-                    {(trade.pnlAmount || trade.netPnl || 0)?.toFixed(2) ||
-                      '0.00'}
+                    {(trade.netPnl || 0) >= 0 ? '+' : ''}
+                    {(trade.netPnl || 0)?.toFixed(2) || '0.00'}
                   </span>
                   <span
-                    className={`$${
+                    className={`${
                       (trade.pnlPercentage || 0) >= 0
                         ? 'text-green-500'
                         : 'text-red-500'
@@ -117,21 +149,21 @@ export default function TradesTableBody({
               <td className="px-4 py-3 text-sm text-gray-200 whitespace-nowrap">
                 <div className="flex space-x-2">
                   <button
-                    className="text-green-500 hover:text-green-400 transition-colors duration-150  cursor-pointer"
+                    className="text-green-500 hover:text-green-400 transition-colors duration-150 cursor-pointer"
                     title="View All Details"
                     onClick={() => openDetailedModal(trade)}
                   >
                     <Eye className="h-5 w-5" />
                   </button>
                   <button
-                    className="text-yellow-500 hover:text-yellow-400 transition-colors duration-150  cursor-pointer"
+                    className="text-yellow-500 hover:text-yellow-400 transition-colors duration-150 cursor-pointer"
                     title="Edit"
                     onClick={() => handleEditClick(trade)}
                   >
                     <Edit className="h-5 w-5" />
                   </button>
                   <button
-                    className="text-red-500 hover:text-red-400 transition-colors duration-150  cursor-pointer"
+                    className="text-red-500 hover:text-red-400 transition-colors duration-150 cursor-pointer"
                     title="Delete"
                     onClick={() =>
                       handleDeleteClick(

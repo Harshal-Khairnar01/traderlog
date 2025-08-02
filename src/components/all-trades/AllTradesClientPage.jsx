@@ -111,7 +111,7 @@ export default function AllTradesClientPage() {
         </button>
       </div>
 
-      <div className=" overflow-x-scroll">
+      <div className=" overflow-x-scroll lg:overflow-hidden">
         <AllTradesTable
           groupedTrades={groupedTrades}
           onDeleteTrade={handleDeleteTrade}

@@ -71,6 +71,7 @@ export async function addTrade(request) {
         tags: Array.isArray(tags) ? tags : [tags],
         charges,
         grossPnl,
+        optionType,
         psychology: {
           create: {
             confidenceLevel,

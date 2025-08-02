@@ -25,21 +25,22 @@ model User {
 model Trade {
   id                     Int        @id @default(autoincrement())
   userId                 Int
-  marketType             String     // e.g., "Indian"
-  symbol                 String     // e.g., RELIANCE, NIFTY 50
+  marketType             String     
+  symbol                 String     
   date                   DateTime
-  time                   String?    // Stored as "HH:mm" format
+  time                   String?    
   entryPrice             Float
   exitPrice              Float
   quantity               Int
   totalAmount            Float
   stopLoss               Float
   target                 Float
-  tradeType              String     // e.g., "Call", "Put"
-  direction              String     // "Long" or "Short"
+  tradeType              String     
+  direction              String     
   grossPnl               Float
   netPnl                 Float
   pnlPercentage          Float
+  optionType             String?
   riskReward             Float
   charges                Float?
   strategyUsed           String?

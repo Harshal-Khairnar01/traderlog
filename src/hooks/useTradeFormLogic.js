@@ -116,7 +116,7 @@ export const useTradeFormLogic = (
         tags: Array.isArray(tradeToEdit.tags)
           ? tradeToEdit.tags.join(', ')
           : tradeToEdit.tags || '',
-        screenshotUpload: null, // Don't preload file objects into state
+        screenshotUpload: null, 
       })
     } else {
       setFormData(initialFormData)
