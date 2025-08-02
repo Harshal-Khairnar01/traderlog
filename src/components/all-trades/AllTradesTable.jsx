@@ -1,5 +1,3 @@
-'use client'
-
 import React from 'react'
 import TradeDetailModal from './TradeDetailModal'
 import ConfirmationModal from './ConfirmationModal'
@@ -24,9 +22,10 @@ const tableHeaders = [
 ]
 
 export default function AllTradesTable({
-  groupedTrades,
+  trades,
   onDeleteTrade,
   onEditTrade,
+  showActions = true,
 }) {
   const {
     isModalOpen,
@@ -50,8 +49,8 @@ export default function AllTradesTable({
   }
 
   return (
-    <div className="bg-slate-900 p-2 rounded-lg shadow-inner ">
-      {Object.keys(groupedTrades).length > 0 ? (
+    <div className="bg-slate-900 rounded-lg shadow-inner ">
+      {trades && trades.length > 0 ? (
         <>
           <div className="md:hidden text-center text-gray-400 text-sm mb-2">
             Swipe or scroll horizontally to see more details.
@@ -60,22 +59,25 @@ export default function AllTradesTable({
             <table className="min-w-full divide-y divide-zinc-700">
               <thead className="bg-zinc-700 sticky top-0 z-10">
                 <tr>
-                  {tableHeaders.map((header) => (
-                    <th
-                      key={header}
-                      className="px-4 py-3 text-left text-xs font-medium text-gray-300 whitespace-nowrap"
-                    >
-                      {header}
-                    </th>
-                  ))}
+                  {tableHeaders
+                    .filter((header) => showActions || header !== 'Actions')
+                    .map((header) => (
+                      <th
+                        key={header}
+                        className="px-4 py-3 text-left text-xs font-medium text-gray-300 whitespace-nowrap"
+                      >
+                        {header}
+                      </th>
+                    ))}
                 </tr>
               </thead>
               <TradesTableBody
-                groupedTrades={groupedTrades}
+                trades={trades}
                 openDetailedModal={openDetailedModal}
                 openTruncatedContentModal={openTruncatedContentModal}
                 handleEditClick={handleEditClick}
                 handleDeleteClick={openConfirmation}
+                showActions={showActions}
               />
             </table>
           </div>

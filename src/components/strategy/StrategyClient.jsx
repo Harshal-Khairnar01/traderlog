@@ -1,42 +1,42 @@
+'use client'
 
-"use client";
-
-import React, { useState, useCallback } from "react";
-import StrategyCard from "@/components/strategy/StrategyCard";
-import StrategyTradesModal from "@/components/strategy/StrategyTradesModal";
-import { useStrategyMetrics } from "@/hooks/useStrategyMetrics";
+import React, { useState, useCallback } from 'react'
+import StrategyCard from '@/components/strategy/StrategyCard'
+import StrategyTradesModal from '@/components/strategy/StrategyTradesModal'
+import { useStrategyMetrics } from '@/hooks/useStrategyMetrics'
 
 const StrategyClient = () => {
-  const { tradeHistory, loading, error, strategyMetrics } = useStrategyMetrics();
+  const { tradeHistory, loading, error, strategyMetrics } = useStrategyMetrics()
 
-  const [showModal, setShowModal] = useState(false);
-  const [modalStrategyName, setModalStrategyName] = useState("");
-  const [modalTrades, setModalTrades] = useState([]);
+  const [showModal, setShowModal] = useState(false)
+  const [modalStrategyName, setModalStrategyName] = useState('')
+  const [modalTrades, setModalTrades] = useState([])
 
   const handleViewDetails = useCallback(
     (strategyName) => {
+      // FIX: Use 'trade.strategyUsed' instead of 'trade.strategy' for filtering
       const filteredTrades = tradeHistory.filter(
-        (trade) => (trade.strategy || "Uncategorized") === strategyName
-      );
-      setModalStrategyName(strategyName);
-      setModalTrades(filteredTrades);
-      setShowModal(true);
+        (trade) => (trade.strategyUsed || 'Uncategorized') === strategyName,
+      )
+      setModalStrategyName(strategyName)
+      setModalTrades(filteredTrades)
+      setShowModal(true)
     },
-    [tradeHistory]
-  );
+    [tradeHistory],
+  )
 
   const handleCloseModal = useCallback(() => {
-    setShowModal(false);
-    setModalStrategyName("");
-    setModalTrades([]);
-  }, []);
+    setShowModal(false)
+    setModalStrategyName('')
+    setModalTrades([])
+  }, [])
 
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
         <p className="text-gray-300 text-lg">Loading strategies data...</p>
       </div>
-    );
+    )
   }
 
   if (error) {
@@ -44,10 +44,10 @@ const StrategyClient = () => {
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
         <p className="text-red-500 text-lg">{error}</p>
       </div>
-    );
+    )
   }
 
-  const hasStrategies = Object.keys(strategyMetrics).length > 0;
+  const hasStrategies = Object.keys(strategyMetrics).length > 0
 
   return (
     <div className="min-h-screen bg-slate-900 relative p-8">
@@ -86,7 +86,7 @@ const StrategyClient = () => {
         />
       )}
     </div>
-  );
-};
+  )
+}
 
-export default StrategyClient;
+export default StrategyClient

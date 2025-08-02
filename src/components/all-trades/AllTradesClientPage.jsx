@@ -57,37 +57,10 @@ export default function AllTradesClientPage() {
     await dispatch(deleteTrade(id))
   }
 
-  const sortedTradeHistory = [...tradeHistory].sort(
+
+  const allTrades = [...tradeHistory].sort(
     (a, b) => new Date(a.date) - new Date(b.date),
   )
-
-  const groupedTrades = {}
-  const colors = [
-    'bg-gray-100',
-    'bg-blue-50',
-    'bg-green-50',
-    'bg-yellow-50',
-    'bg-red-50',
-    'bg-purple-50',
-  ]
-
-  if (sortedTradeHistory.length > 0) {
-    const firstDate = new Date(sortedTradeHistory[0].date)
-    sortedTradeHistory.forEach((trade) => {
-      const tradeDate = new Date(trade.date)
-      const diffTime = Math.abs(tradeDate - firstDate)
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-      const groupIndex = Math.floor(diffDays / 3)
-      const groupKey = `group-${groupIndex}`
-      if (!groupedTrades[groupKey]) {
-        groupedTrades[groupKey] = {
-          color: colors[groupIndex % colors.length],
-          trades: [],
-        }
-      }
-      groupedTrades[groupKey].trades.push(trade)
-    })
-  }
 
   if (loading) return <Loader message="Loading your trade history..." />
   if (error)
@@ -98,7 +71,7 @@ export default function AllTradesClientPage() {
     )
 
   return (
-    <div className=" min-h-screen bg-slate-900 text-white flex flex-col p-2 w-full  ">
+    <div className=" min-h-screen bg-slate-900 text-white flex flex-col p-2 w-full  ">
       <div className=" flex justify-between items-center mb-6 px-5 py-6">
         <h2 className=" text-xl lg:text-3xl font-bold text-gray-200">
           All Trade Data
@@ -113,7 +86,7 @@ export default function AllTradesClientPage() {
 
       <div className=" overflow-x-scroll lg:overflow-hidden">
         <AllTradesTable
-          groupedTrades={groupedTrades}
+          trades={allTrades}
           onDeleteTrade={handleDeleteTrade}
           onEditTrade={openEditTradeForm}
         />
