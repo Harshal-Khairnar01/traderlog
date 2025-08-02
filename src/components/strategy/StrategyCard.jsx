@@ -10,7 +10,7 @@ export default function StrategyCard({ strategyName, usage, profitFactor, totalP
 
 
   return (
-    <div className="bg-zinc-800 p-6 rounded-lg shadow-lg border border-zinc-700 hover:border-blue-500 transition-all duration-200">
+    <div className="bg-slate-800 p-6 rounded-lg shadow-lg border border-zinc-700 hover:border-blue-500 transition-all duration-200">
       <h3 className="text-xl font-bold text-gray-100 mb-2 truncate">{strategyName}</h3>
       <p className="text-sm text-gray-400 mb-4">Strategy Usage: <span className="font-semibold text-gray-200">{usage.toFixed(1)}%</span></p>
 
@@ -28,7 +28,7 @@ export default function StrategyCard({ strategyName, usage, profitFactor, totalP
           </p>
         </div>
         <div>
-          <p className="text-sm text-gray-400">Total Profit</p>
+          <p className="text-sm text-gray-400">Total P/L</p>
           <p className={`text-lg font-semibold ${profitColorClass}`}>
             {totalProfit >= 0 ? '+' : ''}{totalProfit.toFixed(2)}
           </p>
