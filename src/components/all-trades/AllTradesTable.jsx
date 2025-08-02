@@ -50,7 +50,7 @@ export default function AllTradesTable({
   }
 
   return (
-    <div className="bg-zinc-900 p-4 rounded-lg shadow-inner ">
+    <div className="bg-slate-900 p-2 rounded-lg shadow-inner ">
       {Object.keys(groupedTrades).length > 0 ? (
         <>
           <div className="md:hidden text-center text-gray-400 text-sm mb-2">

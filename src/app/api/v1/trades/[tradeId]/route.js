@@ -54,6 +54,7 @@ export async function PUT(request, context) {
       tags,
       charges,
       grossPnl,
+      optionType,
       confidenceLevel,
       emotionsBefore,
       emotionsAfter,
@@ -82,6 +83,7 @@ export async function PUT(request, context) {
       riskReward,
       strategyUsed,
       outcomeSummary,
+      optionType,
       tradeAnalysis,
       tags: Array.isArray(tags) ? tags : [tags],
       charges,
@@ -115,10 +117,6 @@ export async function PUT(request, context) {
         psychology: true,
       },
     })
-
-  
-
-    
 
     return NextResponse.json(updatedTrade, { status: 200 })
   } catch (error) {
