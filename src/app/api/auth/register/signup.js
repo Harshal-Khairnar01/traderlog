@@ -44,7 +44,7 @@ export async function Signup(request) {
         message: 'User registered successfully',
         user: {
           id: user.id,
-          name: user.name,
+          name: `${user.firstName} ${user.lastName}`,
           email: user.email,
         },
       },
