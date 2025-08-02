@@ -1,4 +1,3 @@
-// src/components/new-trade-entry-form/GeneralTabContent.jsx
 import React from 'react'
 import FormField from '../FormField'
 
@@ -80,12 +79,12 @@ export default function GeneralTabContent({ formData, handleChange }) {
       <div className="col-span-full grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4">
         <div className="flex gap-2">
           <FormField
-            label="P&L Amount (Net)"
-            id="pnlAmount"
+            label="P&L (Net)"
+            id="netPnl"
             type="text"
             step="0.01"
             placeholder="Net P&L"
-            value={formData.pnlAmount}
+            value={formData.netPnl}
             readOnly
           />
           <FormField
@@ -98,55 +97,32 @@ export default function GeneralTabContent({ formData, handleChange }) {
           />
         </div>
 
+        {/* This is the corrected implementation of the Trade Type selector and Option Type buttons */}
         <div className="col-span-1">
-          <label className="block text-sm font-medium text-gray-400 mb-2">
-            Trade Type
-          </label>
-          <div className="flex gap-4 w-full">
-            <div className="flex gap-1 items-center w-1/2 ">
-              <button
-                type="button"
-                className={`px-1 py-2 rounded-md font-semibold text-sm transition-colors duration-200 w-1/2 ${
-                  formData.direction === 'Long'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-zinc-700 text-gray-300 hover:bg-zinc-600'
-                }`}
-                onClick={() =>
-                  handleChange({
-                    target: {
-                      id: 'direction',
-                      value: 'Long',
-                      type: 'radio',
-                      name: 'direction',
-                    },
-                  })
-                }
-              >
-                <span className="">↑</span> Long
-              </button>
-              <button
-                type="button"
-                className={`px-1 py-2 rounded-md font-semibold text-sm w-1/2 transition-colors duration-200 ${
-                  formData.direction === 'Short'
-                    ? 'bg-red-600 text-white'
-                    : 'bg-zinc-700 text-gray-300 hover:bg-zinc-600'
-                }`}
-                onClick={() =>
-                  handleChange({
-                    target: {
-                      id: 'direction',
-                      value: 'Short',
-                      type: 'radio',
-                      name: 'direction',
-                    },
-                  })
-                }
-              >
-                <span className="">↓</span> Short
-              </button>
-            </div>
-
-            <div className="flex gap-1 items-center w-1/2 ">
+          <FormField
+            label="Trade Type"
+            id="tradeType"
+            type="select"
+            options={[
+              'Select Trade Type',
+              'Intraday - Equity',
+              'Intraday - F&O',
+              'Swing - Equity',
+              'Swing - F&O',
+              'Positional - Equity',
+              'Positional - F&O',
+              'Options',
+              'Futures',
+              'Cash',
+              'Commodity',
+              'Currency',
+            ]}
+            value={formData.tradeType}
+            onChange={handleChange}
+          />
+          {/* Conditionally render Call/Put buttons only when tradeType is 'Options' */}
+          {formData.tradeType === 'Options' && (
+            <div className="flex gap-1 items-center mt-2 w-full">
               <button
                 type="button"
                 className={`px-4 py-2 rounded-md font-semibold text-sm transition-colors duration-200 w-1/2 ${
@@ -188,6 +164,54 @@ export default function GeneralTabContent({ formData, handleChange }) {
                 Put
               </button>
             </div>
+          )}
+        </div>
+
+        <div className="col-span-1">
+          <label className="block text-sm font-medium text-gray-400 mb-2">
+            Direction
+          </label>
+          <div className="flex gap-1 items-center w-full">
+            <button
+              type="button"
+              className={`px-1 py-2 rounded-md font-semibold text-sm transition-colors duration-200 w-1/2 ${
+                formData.direction === 'Long'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-zinc-700 text-gray-300 hover:bg-zinc-600'
+              }`}
+              onClick={() =>
+                handleChange({
+                  target: {
+                    id: 'direction',
+                    value: 'Long',
+                    type: 'radio',
+                    name: 'direction',
+                  },
+                })
+              }
+            >
+              <span className="">↑</span> Long
+            </button>
+            <button
+              type="button"
+              className={`px-1 py-2 rounded-md font-semibold text-sm w-1/2 transition-colors duration-200 ${
+                formData.direction === 'Short'
+                  ? 'bg-red-600 text-white'
+                  : 'bg-zinc-700 text-gray-300 hover:bg-zinc-600'
+              }`}
+              onClick={() =>
+                handleChange({
+                  target: {
+                    id: 'direction',
+                    value: 'Short',
+                    type: 'radio',
+                    name: 'direction',
+                  },
+                })
+              }
+            >
+              <span className="">↓</span> Short
+            </button>
           </div>
         </div>
 
@@ -235,8 +259,8 @@ export default function GeneralTabContent({ formData, handleChange }) {
 
       <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
-          label="Strategy"
-          id="strategy"
+          label="Strategy Used"
+          id="strategyUsed"
           type="select"
           options={[
             'Select Strategy',
@@ -251,7 +275,7 @@ export default function GeneralTabContent({ formData, handleChange }) {
             'Resistance',
             'Other',
           ]}
-          value={formData.strategy}
+          value={formData.strategyUsed}
           onChange={handleChange}
         />
         <FormField

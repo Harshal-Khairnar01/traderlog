@@ -1,4 +1,3 @@
-// src/components/new-trade-entry-form/NewTradeEntryForm.jsx
 'use client'
 
 import React, { useState } from 'react'
@@ -7,23 +6,21 @@ import PsychologyTabContent from './PsychologyTabContent'
 import { useTradeFormLogic } from '@/hooks/useTradeFormLogic'
 
 export default function NewTradeEntryForm({
-  addTrade, // This prop
-  updateTrade, // This prop
-  onClose, // This prop
+  addTrade,
+  updateTrade,
+  onClose,
   tradeToEdit,
 }) {
   const [activeTab, setActiveTab] = useState('General')
 
-  // IMPORTANT CHANGE HERE: Pass addTrade, updateTrade, onClose to the hook
   const {
     formData,
     handleChange,
     handleCheckboxChange,
     handleSubmit,
     handleReset,
-  } = useTradeFormLogic(tradeToEdit, addTrade, updateTrade, onClose) // <--- HERE
+  } = useTradeFormLogic(tradeToEdit, addTrade, updateTrade, onClose)
 
-  // The onSubmit function no longer needs to pass these as arguments
   const onSubmit = (e) => handleSubmit(e)
 
   return (
