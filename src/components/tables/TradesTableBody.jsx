@@ -5,7 +5,6 @@ import { getSlTargetColorClass, getRowClass } from '@/utils/tradeTableHelpers'
 export default function TradesTableBody({
   groupedTrades,
   openDetailedModal,
-  openTruncatedContentModal,
   handleEditClick,
   handleDeleteClick,
 }) {
@@ -65,7 +64,7 @@ export default function TradesTableBody({
               <td className="px-4 py-3 text-sm whitespace-nowrap">
                 <div className="flex flex-col">
                   <span
-                    className={`${
+                    className={`$${
                       (trade.pnlAmount || trade.netPnl || 0) >= 0
                         ? 'text-green-500'
                         : 'text-red-500'
@@ -76,7 +75,7 @@ export default function TradesTableBody({
                       '0.00'}
                   </span>
                   <span
-                    className={`${
+                    className={`$${
                       (trade.pnlPercentage || 0) >= 0
                         ? 'text-green-500'
                         : 'text-red-500'
@@ -93,26 +92,10 @@ export default function TradesTableBody({
               <td className="px-4 py-3 text-sm text-gray-200 whitespace-nowrap">
                 {trade.riskReward || 'N/A'}
               </td>
-              <td
-                className="px-4 py-3 text-sm text-gray-200 max-w-[8rem] truncate cursor-pointer hover:underline"
-                onClick={() =>
-                  openTruncatedContentModal(
-                    'Strategy',
-                    trade.strategyUsed || 'N/A',
-                  )
-                }
-              >
+              <td className="px-4 py-3 text-sm text-gray-200 max-w-[8rem] ">
                 {trade.strategyUsed || '-'}
               </td>
-              <td
-                className="px-4 py-3 text-sm text-gray-200 max-w-[8rem] truncate cursor-pointer hover:underline"
-                onClick={() =>
-                  openTruncatedContentModal(
-                    'Outcome Summary',
-                    trade.outcomeSummary || 'N/A',
-                  )
-                }
-              >
+              <td className="px-4 py-3 text-sm text-gray-200 max-w-[8rem] ">
                 {trade.outcomeSummary || '-'}
               </td>
               <td className="px-4 py-3 text-sm whitespace-nowrap">
@@ -127,28 +110,28 @@ export default function TradesTableBody({
                     Total Amt: {trade.totalAmount || 'N/A'}
                   </span>
                   <span className="text-gray-400 text-xs">
-                    Conf: {trade.confidenceLevel || 'N/A'}
+                    Conf: {trade.psychology.confidenceLevel || 'N/A'}
                   </span>
                 </div>
               </td>
               <td className="px-4 py-3 text-sm text-gray-200 whitespace-nowrap">
                 <div className="flex space-x-2">
                   <button
-                    className="text-blue-500 hover:text-blue-400 transition-colors duration-150"
+                    className="text-green-500 hover:text-green-400 transition-colors duration-150  cursor-pointer"
                     title="View All Details"
                     onClick={() => openDetailedModal(trade)}
                   >
                     <Eye className="h-5 w-5" />
                   </button>
                   <button
-                    className="text-blue-500 hover:text-blue-400 transition-colors duration-150"
+                    className="text-yellow-500 hover:text-yellow-400 transition-colors duration-150  cursor-pointer"
                     title="Edit"
                     onClick={() => handleEditClick(trade)}
                   >
                     <Edit className="h-5 w-5" />
                   </button>
                   <button
-                    className="text-red-500 hover:text-red-400 transition-colors duration-150"
+                    className="text-red-500 hover:text-red-400 transition-colors duration-150  cursor-pointer"
                     title="Delete"
                     onClick={() =>
                       handleDeleteClick(

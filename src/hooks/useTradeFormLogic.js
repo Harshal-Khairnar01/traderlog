@@ -51,6 +51,7 @@ export const useTradeFormLogic = (
       const stopLoss = parseFloat(newData.stopLoss)
       const target = parseFloat(newData.target)
       const charges = parseFloat(newData.charges) || 0
+
       let totalAmt = 0
       let grossPnl = 0
       let netPnl = 0
@@ -102,27 +103,9 @@ export const useTradeFormLogic = (
         ? new Date(tradeToEdit.date).toISOString().split('T')[0]
         : ''
       setFormData({
-        marketType: tradeToEdit.marketType || 'Indian',
-        symbol: tradeToEdit.symbol || '',
+        ...initialFormData,
+        ...tradeToEdit,
         date: formattedDate,
-        time: tradeToEdit.time || '',
-        entryPrice: tradeToEdit.entryPrice ?? '',
-        quantity: tradeToEdit.quantity ?? '',
-        totalAmount: tradeToEdit.totalAmount ?? '',
-        exitPrice: tradeToEdit.exitPrice ?? '',
-        grossPnl: tradeToEdit.grossPnl ?? '',
-        netPnl: tradeToEdit.netPnl ?? '',
-        pnlPercentage: tradeToEdit.pnlPercentage ?? '',
-        direction: tradeToEdit.direction || 'Long',
-        optionType: tradeToEdit.optionType || '',
-        tradeType: tradeToEdit.tradeType || 'Select Trade Type',
-        stopLoss: tradeToEdit.stopLoss ?? '',
-        target: tradeToEdit.target ?? '',
-        riskReward: tradeToEdit.riskReward ?? '',
-        charges: tradeToEdit.charges ?? '',
-        strategyUsed: tradeToEdit.strategyUsed || 'Select Strategy',
-        outcomeSummary: tradeToEdit.outcomeSummary || 'Select Outcome Summary',
-        tradeAnalysis: tradeToEdit.tradeAnalysis || '',
         confidenceLevel: tradeToEdit.psychology?.confidenceLevel || '5',
         emotionsBefore: tradeToEdit.psychology?.emotionsBefore || 'Calm',
         emotionsAfter: tradeToEdit.psychology?.emotionsAfter || 'Satisfied',
@@ -133,7 +116,7 @@ export const useTradeFormLogic = (
         tags: Array.isArray(tradeToEdit.tags)
           ? tradeToEdit.tags.join(', ')
           : tradeToEdit.tags || '',
-        screenshotUpload: tradeToEdit.screenshotUpload || null,
+        screenshotUpload: null, // Don't preload file objects into state
       })
     } else {
       setFormData(initialFormData)
@@ -154,10 +137,10 @@ export const useTradeFormLogic = (
   ])
 
   const handleChange = useCallback((e) => {
-    const { id, value, type, name } = e.target
+    const { id, value, type, name, files } = e.target
     setFormData((prevData) => {
       if (type === 'radio') return { ...prevData, [name]: value }
-      if (type === 'file') return { ...prevData, [id]: e.target.files[0] }
+      if (type === 'file') return { ...prevData, [id]: files[0] }
       if (type === 'number')
         return { ...prevData, [id]: value === '' ? '' : parseFloat(value) }
       return { ...prevData, [id]: value }
@@ -201,6 +184,10 @@ export const useTradeFormLogic = (
 
       const tradeDataToSave = {
         ...formData,
+        date:
+          typeof formData.date === 'string'
+            ? formData.date
+            : new Date(formData.date).toISOString().split('T')[0],
         entryPrice: Number(formData.entryPrice) || 0,
         exitPrice: Number(formData.exitPrice) || 0,
         quantity: Number(formData.quantity) || 0,
@@ -228,7 +215,7 @@ export const useTradeFormLogic = (
 
       try {
         if (tradeToEdit) {
-          await updateTrade(tradeToEdit.id, { ...tradeDataToSave })
+          await updateTrade(tradeToEdit.id, tradeDataToSave)
         } else {
           await addTrade(tradeDataToSave)
         }
@@ -245,41 +232,7 @@ export const useTradeFormLogic = (
 
   const handleReset = useCallback(() => {
     if (tradeToEdit) {
-      setFormData({
-        ...initialFormData,
-        marketType: tradeToEdit.marketType || 'Indian',
-        symbol: tradeToEdit.symbol || '',
-        date: tradeToEdit.date || '',
-        time: tradeToEdit.time || '',
-        entryPrice: tradeToEdit.entryPrice ?? '',
-        quantity: tradeToEdit.quantity ?? '',
-        totalAmount: tradeToEdit.totalAmount ?? '',
-        exitPrice: tradeToEdit.exitPrice ?? '',
-        grossPnl: tradeToEdit.grossPnl ?? '',
-        netPnl: tradeToEdit.netPnl ?? '',
-        pnlPercentage: tradeToEdit.pnlPercentage ?? '',
-        direction: tradeToEdit.direction || 'Long',
-        optionType: tradeToEdit.optionType || '',
-        tradeType: tradeToEdit.tradeType || 'Select Trade Type',
-        stopLoss: tradeToEdit.stopLoss ?? '',
-        target: tradeToEdit.target ?? '',
-        riskReward: tradeToEdit.riskReward ?? '',
-        charges: tradeToEdit.charges ?? '',
-        strategyUsed: tradeToEdit.strategyUsed || 'Select Strategy',
-        outcomeSummary: tradeToEdit.outcomeSummary || 'Select Outcome Summary',
-        tradeAnalysis: tradeToEdit.tradeAnalysis || '',
-        confidenceLevel: tradeToEdit.confidenceLevel || '5',
-        emotionsBefore: tradeToEdit.emotionsBefore || 'Calm',
-        emotionsAfter: tradeToEdit.emotionsAfter || 'Satisfied',
-        notes: tradeToEdit.tradeNotes || '',
-        mistakes: tradeToEdit.mistakes || '',
-        mistakeChecklist: tradeToEdit.mistakeChecklist || [],
-        whatIDidWell: tradeToEdit.whatDidWell || '',
-        tags: Array.isArray(tradeToEdit.tags)
-          ? tradeToEdit.tags.join(', ')
-          : tradeToEdit.tags || '',
-        screenshotUpload: tradeToEdit.screenshotUpload || null,
-      })
+      setFormData(initialFormData)
       toast.info('Form reset to original values!')
     } else {
       setFormData(initialFormData)

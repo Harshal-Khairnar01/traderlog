@@ -1,10 +1,10 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import 'react-toastify/dist/ReactToastify.css'
-
+import { useDispatch, useSelector } from 'react-redux'
 import { useSession } from 'next-auth/react'
 
+import { fetchTrades, addTrade } from '@/store/tradesSlice'
 import { useTradeCalculations } from '@/hooks/useTradeCalculations'
 
 import DashboardHeader from '@/components/dashboard/DashboardHeader'
@@ -13,7 +13,6 @@ import PnlChart from '@/components/dashboard/PnlChart'
 import TopTrades from '@/components/dashboard/TopTrades'
 import TradingConfidenceIndex from '@/components/challenge/TradingConfidenceIndex'
 import TradeEntryModal from '@/components/dashboard/TradeEntryModal'
-import { useTrades } from '@/hooks/useTrades'
 import Loader from '../Loader'
 
 const DashboardPage = () => {
@@ -21,15 +20,17 @@ const DashboardPage = () => {
   const [showNewTradeModal, setShowNewTradeModal] = useState(false)
 
   const profileDropdownRef = useRef(null)
+  const dispatch = useDispatch()
 
   const { data: session, status } = useSession()
-
-  const { tradeHistory, loading: isLoading, error, addTrade } = useTrades()
-
   const userName = session?.user?.name || 'Guest'
   const userInitial = userName.charAt(0).toUpperCase()
 
-  console.log(tradeHistory, 'ttt')
+  const { tradeHistory, loading, error } = useSelector((state) => state.trades)
+
+  useEffect(() => {
+    dispatch(fetchTrades())
+  }, [dispatch])
 
   const {
     highestPnl,
@@ -41,6 +42,8 @@ const DashboardPage = () => {
     topLosingTrades,
     averageConfidenceLevel,
   } = useTradeCalculations(tradeHistory)
+
+ 
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -58,7 +61,6 @@ const DashboardPage = () => {
   }, [])
 
   if (status === 'loading') return <Loader message="Loading session..." />
-
   if (status === 'unauthenticated') {
     return (
       <div className="min-h-screen bg-slate-800 p-4 flex items-center justify-center">
@@ -69,8 +71,7 @@ const DashboardPage = () => {
     )
   }
 
-  if (isLoading) return <Loader message="Loading your trade data..." />
-
+  if (loading) return <Loader message="Loading your trade data..." />
   if (error) {
     return (
       <div className="min-h-screen bg-slate-800 p-4 flex items-center justify-center">
@@ -116,7 +117,18 @@ const DashboardPage = () => {
       <TradeEntryModal
         show={showNewTradeModal}
         onClose={() => setShowNewTradeModal(false)}
-        onAddTrade={addTrade}
+        onAddTrade={async (trade) => {
+          try {
+            const resultAction = await dispatch(addTrade(trade))
+            if (addTrade.fulfilled.match(resultAction)) {
+              setShowNewTradeModal(false)
+            } else {
+              console.error('Failed to add trade:', resultAction.error)
+            }
+          } catch (err) {
+            console.error('Error adding trade:', err)
+          }
+        }}
       />
     </div>
   )

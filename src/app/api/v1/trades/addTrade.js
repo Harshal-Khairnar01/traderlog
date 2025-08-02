@@ -46,7 +46,6 @@ export async function addTrade(request) {
       mistakeChecklist,
       whatIDidWell,
       screenshotUpload,
-      dateTime,
     } = data
     const createdTrade = await prisma.trade.create({
       data: {

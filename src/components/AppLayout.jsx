@@ -1,26 +1,23 @@
-"use client";
+'use client'
 
-import React, { useState } from "react";
-import { useSession } from "next-auth/react";
-import { redirect, usePathname } from "next/navigation";
-import LeftSidebar from "@/components/LeftSideBar";
+import React, { useState } from 'react'
+import { useSession } from 'next-auth/react'
+import { redirect, usePathname } from 'next/navigation'
+import LeftSidebar from '@/components/LeftSideBar'
+import Loader from './Loader'
 
 const AppLayout = ({ children }) => {
-  const { data: session, status } = useSession();
-  const pathname = usePathname();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { data: session, status } = useSession()
+  const pathname = usePathname()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen bg-zinc-800 p-4 flex items-center justify-center">
-        <div className="text-gray-200 text-lg">Loading session...</div>
-      </div>
-    );
+  if (status === 'loading') {
+    return <Loader message="loading session.." />
   }
 
-  if (!session && pathname !== "/sign-in") {
-    redirect("/sign-in");
-    return null;
+  if (!session && pathname !== '/sign-in') {
+    redirect('/sign-in')
+    return null
   }
 
   return (
@@ -70,7 +67,7 @@ const AppLayout = ({ children }) => {
         <main className="flex-1  overflow-auto">{children}</main>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default AppLayout;
+export default AppLayout

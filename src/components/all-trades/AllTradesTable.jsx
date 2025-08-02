@@ -1,18 +1,27 @@
+'use client'
 
-"use client";
-
-import React from "react";
-import TradeDetailModal from "./TradeDetailModal";
-import ConfirmationModal from "./ConfirmationModal";
-import TradesTableBody from "@/components/tables/TradesTableBody";
-import { useTradeDetailModal } from "@/hooks/useTradeDetailModal";
-import { useConfirmationModal } from "@/hooks/useConfirmationModal";
+import React from 'react'
+import TradeDetailModal from './TradeDetailModal'
+import ConfirmationModal from './ConfirmationModal'
+import TradesTableBody from '@/components/tables/TradesTableBody'
+import { useTradeDetailModal } from '@/hooks/useTradeDetailModal'
+import { useConfirmationModal } from '@/hooks/useConfirmationModal'
 
 const tableHeaders = [
-  "Date", "Symbol", "Type", "Direction", "Qty", "Entry/Exit",
-  "P/L (%)", "Charges", "Risk/Reward", "Strategy", "Outcome",
-  "Details", "Actions"
-];
+  'Date',
+  'Symbol',
+  'Type',
+  'Direction',
+  'Qty',
+  'Entry/Exit',
+  'P/L (%)',
+  'Charges',
+  'Risk/Reward',
+  'Strategy',
+  'Outcome',
+  'Details',
+  'Actions',
+]
 
 export default function AllTradesTable({
   groupedTrades,
@@ -26,7 +35,7 @@ export default function AllTradesTable({
     openDetailedModal,
     openTruncatedContentModal,
     closeModal,
-  } = useTradeDetailModal();
+  } = useTradeDetailModal()
 
   const {
     isConfirmModalOpen,
@@ -34,14 +43,14 @@ export default function AllTradesTable({
     openConfirmation,
     confirmAction,
     cancelAction,
-  } = useConfirmationModal(onDeleteTrade);
+  } = useConfirmationModal(onDeleteTrade)
 
   const handleEditClick = (trade) => {
-    onEditTrade(trade);
-  };
+    onEditTrade(trade)
+  }
 
   return (
-    <div className="bg-zinc-900 p-4 rounded-lg shadow-inner">
+    <div className="bg-zinc-900 p-4 rounded-lg shadow-inner ">
       {Object.keys(groupedTrades).length > 0 ? (
         <div className="max-h-[85vh] overflow-y-auto overflow-x-auto custom-scrollbar">
           <table className="min-w-full divide-y divide-zinc-700">
@@ -75,7 +84,7 @@ export default function AllTradesTable({
       <TradeDetailModal
         isOpen={isModalOpen}
         onClose={closeModal}
-        title={isSimpleTextModal ? modalContent?.title : "Trade Details"}
+        title={isSimpleTextModal ? modalContent?.title : 'Trade Details'}
         content={isSimpleTextModal ? modalContent?.content : null}
         tradeData={isSimpleTextModal ? null : modalContent}
         isSimpleText={isSimpleTextModal}
@@ -86,8 +95,10 @@ export default function AllTradesTable({
         onClose={cancelAction}
         onConfirm={confirmAction}
         title="Confirm Deletion"
-        message={`Are you sure you want to delete the trade for ${itemToDelete?.name || "this instrument"}? This action cannot be undone.`}
+        message={`Are you sure you want to delete the trade for ${
+          itemToDelete?.name || 'this instrument'
+        }? This action cannot be undone.`}
       />
     </div>
-  );
+  )
 }
