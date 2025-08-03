@@ -57,10 +57,18 @@ export default function AllTradesClientPage() {
     await dispatch(deleteTrade(id))
   }
 
+  const allTrades = [...tradeHistory].sort((a, b) => {
+    const parseDateTime = (trade) => {
+      const datePart = new Date(trade.date).toISOString().split('T')[0]
+      const timePart = trade.time.padStart(5, '0')
+      return new Date(`${datePart}T${timePart}:00`)
+    }
 
-  const allTrades = [...tradeHistory].sort(
-    (a, b) => new Date(a.date) - new Date(b.date),
-  )
+    const dateTimeA = parseDateTime(a)
+    const dateTimeB = parseDateTime(b)
+
+    return dateTimeB - dateTimeA // latest first
+  })
 
   if (loading) return <Loader message="Loading your trade history..." />
   if (error)

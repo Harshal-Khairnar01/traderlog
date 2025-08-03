@@ -1,7 +1,6 @@
-// src/app/dashboard/components/DashboardHeader.jsx
-import React from 'react';
-import Link from 'next/link';
-import { signOut } from 'next-auth/react';
+import React from 'react'
+import Link from 'next/link'
+import { signOut } from 'next-auth/react'
 
 const DashboardHeader = ({
   userInitial,
@@ -10,12 +9,20 @@ const DashboardHeader = ({
   showProfileDropdown,
   setShowProfileDropdown,
   profileDropdownRef,
+  timeRange,
+  setTimeRange,
 }) => {
   return (
     <div className="w-full max-w-7xl flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
       <div className="w-full sm:w-auto flex justify-between items-center">
-        <select className="bg-slate-800 border border-slate-700 rounded px-3 py-1 text-sm text-gray-200">
-          <option>Last 30 Days</option>
+        <select
+          className="bg-slate-800 border border-slate-700 rounded px-3 py-1 text-sm text-gray-200"
+          value={timeRange}
+          onChange={(e) => setTimeRange(e.target.value)}
+        >
+          <option value="alltime">All Time</option>
+          <option value="30days">Last 30 Days</option>
+          <option value="7days">Last 7 Days</option>
         </select>
       </div>
       <div
@@ -60,8 +67,8 @@ const DashboardHeader = ({
             </Link>
             <button
               onClick={() => {
-                signOut();
-                setShowProfileDropdown(false);
+                signOut()
+                setShowProfileDropdown(false)
               }}
               className="block w-full text-left cursor-pointer px-4 py-2 text-gray-200 hover:bg-slate-700 rounded-b-md"
             >
@@ -71,7 +78,7 @@ const DashboardHeader = ({
         )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default DashboardHeader;
+export default DashboardHeader

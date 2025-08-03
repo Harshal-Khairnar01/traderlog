@@ -1,47 +1,58 @@
 import { useMemo } from 'react'
-import { parseISO, isValid } from 'date-fns'
+import { parseISO, isValid, subDays, isWithinInterval } from 'date-fns'
 
-export const useTradeCalculations = (tradeHistory) => {
-  const currentMonth = new Date().getMonth()
-  const currentYear = new Date().getFullYear()
+export const useTradeCalculations = (tradeHistory, timeRange) => {
+  const currentInterval = useMemo(() => {
+    if (timeRange === 'alltime') {
+      return null
+    }
+    const now = new Date()
+    let start = now
+    if (timeRange === '7days') {
+      start = subDays(now, 7)
+    } else {
+      start = subDays(now, 30)
+    }
+    return { start, end: now }
+  }, [timeRange])
 
-  const monthlyTrades = useMemo(() => {
-    return tradeHistory.filter((t) => {
-      const tradeDate = parseISO(t.date)
-      return (
-        isValid(tradeDate) &&
-        tradeDate.getMonth() === currentMonth &&
-        tradeDate.getFullYear() === currentYear
-      )
+  const currentPeriodTrades = useMemo(() => {
+    if (timeRange === 'alltime') {
+      return tradeHistory
+    }
+
+    return tradeHistory.filter((trade) => {
+      const tradeDate = parseISO(trade.date)
+      return isValid(tradeDate) && isWithinInterval(tradeDate, currentInterval)
     })
-  }, [tradeHistory, currentMonth, currentYear])
+  }, [tradeHistory, currentInterval, timeRange])
+
+  const tradesCount = currentPeriodTrades.length
 
   const highestPnl = useMemo(() => {
-    if (tradeHistory.length === 0) return 0
-    const allPnls = tradeHistory.map((t) => t.pnlAmount)
+    if (currentPeriodTrades.length === 0) return 0
+    const allPnls = currentPeriodTrades.map((t) => t.netPnl)
     return Math.max(...allPnls)
-  }, [tradeHistory])
-
-  const tradesThisMonthCount = monthlyTrades.length
+  }, [currentPeriodTrades])
 
   const winRate = useMemo(() => {
-    if (monthlyTrades.length === 0) return 0
-    const winningTrades = monthlyTrades.filter((t) => t.pnlAmount > 0).length
-    return (winningTrades / monthlyTrades.length) * 100
-  }, [monthlyTrades])
+    if (currentPeriodTrades.length === 0) return 0
+    const winningTrades = currentPeriodTrades.filter((t) => t.netPnl > 0).length
+    return (winningTrades / currentPeriodTrades.length) * 100
+  }, [currentPeriodTrades])
 
   const avgRiskReward = useMemo(() => {
-    if (monthlyTrades.length === 0) return 'N/A'
-    const positiveTrades = monthlyTrades.filter((t) => t.pnlAmount > 0)
-    const negativeTrades = monthlyTrades.filter((t) => t.pnlAmount < 0)
+    if (currentPeriodTrades.length === 0) return 'N/A'
+    const positiveTrades = currentPeriodTrades.filter((t) => t.netPnl > 0)
+    const negativeTrades = currentPeriodTrades.filter((t) => t.netPnl < 0)
     const avgWinPnl =
       positiveTrades.length > 0
-        ? positiveTrades.reduce((sum, t) => sum + t.pnlAmount, 0) /
+        ? positiveTrades.reduce((sum, t) => sum + t.netPnl, 0) /
           positiveTrades.length
         : 0
     const avgLossPnl =
       negativeTrades.length > 0
-        ? negativeTrades.reduce((sum, t) => sum + t.pnlAmount, 0) /
+        ? negativeTrades.reduce((sum, t) => sum + t.netPnl, 0) /
           negativeTrades.length
         : 0
     if (avgWinPnl > 0 && avgLossPnl < 0) {
@@ -53,47 +64,46 @@ export const useTradeCalculations = (tradeHistory) => {
     } else {
       return '0:0'
     }
-  }, [monthlyTrades])
+  }, [currentPeriodTrades])
 
   const cumulativePnlData = useMemo(() => {
-    if (tradeHistory.length === 0) return []
-    const validTrades = tradeHistory.filter((trade) => trade.dateTime !== null)
-    const sortedTrades = [...validTrades].sort((a, b) => {
-      const dateA = parseISO(a.dateTime)
-      const dateB = parseISO(b.dateTime)
-      if (!isValid(dateA) && !isValid(dateB)) return 0
-      if (!isValid(dateA)) return 1
-      if (!isValid(dateB)) return -1
-      return dateA.getTime() - dateB.getTime()
+    if (currentPeriodTrades.length === 0) return []
+    const sortedTrades = [...currentPeriodTrades].sort((a, b) => {
+      const dateTimeA = parseISO(`${a.date.split('T')[0]}T${a.time}:00.000Z`)
+      const dateTimeB = parseISO(`${b.date.split('T')[0]}T${b.time}:00.000Z`)
+      if (!isValid(dateTimeA) && !isValid(dateTimeB)) return 0
+      if (!isValid(dateTimeA)) return 1
+      if (!isValid(dateTimeB)) return -1
+      return dateTimeA.getTime() - dateTimeB.getTime()
     })
     let cumulativeSum = 0
     const data = sortedTrades.map((trade) => {
-      cumulativeSum += trade.pnlAmount
+      cumulativeSum += trade.netPnl
       return {
         name: `${trade.date.split('T')[0]} ${trade.time}`,
         pnl: cumulativeSum,
       }
     })
     return data
-  }, [tradeHistory])
+  }, [currentPeriodTrades])
 
   const topProfitTrades = useMemo(() => {
-    return [...monthlyTrades]
-      .filter((trade) => trade.pnlAmount > 0)
-      .sort((a, b) => b.pnlAmount - a.pnlAmount)
+    return [...currentPeriodTrades]
+      .filter((trade) => trade.netPnl > 0)
+      .sort((a, b) => b.netPnl - a.netPnl)
       .slice(0, 3)
-  }, [monthlyTrades])
+  }, [currentPeriodTrades])
 
   const topLosingTrades = useMemo(() => {
-    return [...monthlyTrades]
-      .filter((trade) => trade.pnlAmount < 0)
-      .sort((a, b) => a.pnlAmount - b.pnlAmount)
+    return [...currentPeriodTrades]
+      .filter((trade) => trade.netPnl < 0)
+      .sort((a, b) => a.netPnl - b.netPnl)
       .slice(0, 3)
-  }, [monthlyTrades])
+  }, [currentPeriodTrades])
 
   const averageConfidenceLevel = useMemo(() => {
-    if (tradeHistory.length === 0) return 0
-    const totalConfidence = tradeHistory.reduce((sum, trade) => {
+    if (currentPeriodTrades.length === 0) return 0
+    const totalConfidence = currentPeriodTrades.reduce((sum, trade) => {
       return (
         sum +
         (typeof trade.psychology?.confidenceLevel === 'number'
@@ -101,15 +111,13 @@ export const useTradeCalculations = (tradeHistory) => {
           : 0)
       )
     }, 0)
-    const average = totalConfidence / tradeHistory.length
-    const scaledAverage = average * 10
-    return Math.min(100, Math.max(0, scaledAverage))
-  }, [tradeHistory])
+    const average = totalConfidence / currentPeriodTrades.length
+    return average * 10
+  }, [currentPeriodTrades])
 
   return {
-    monthlyTrades,
     highestPnl,
-    tradesThisMonthCount,
+    tradesCount,
     winRate,
     avgRiskReward,
     cumulativePnlData,

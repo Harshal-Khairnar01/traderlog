@@ -14,12 +14,22 @@ const StrategyClient = () => {
 
   const handleViewDetails = useCallback(
     (strategyName) => {
-      // FIX: Use 'trade.strategyUsed' instead of 'trade.strategy' for filtering
       const filteredTrades = tradeHistory.filter(
         (trade) => (trade.strategyUsed || 'Uncategorized') === strategyName,
       )
+
+      const sortedTrades = [...filteredTrades].sort((a, b) => {
+        const parseDateTime = (trade) => {
+          const datePart = new Date(trade.date).toISOString().split('T')[0]
+          const timePart = trade.time.padStart(5, '0')
+          return new Date(`${datePart}T${timePart}:00`)
+        }
+
+        return parseDateTime(b) - parseDateTime(a)
+      })
+
       setModalStrategyName(strategyName)
-      setModalTrades(filteredTrades)
+      setModalTrades(sortedTrades)
       setShowModal(true)
     },
     [tradeHistory],
