@@ -2,6 +2,15 @@ import React from 'react'
 import { Eye, Edit, Trash2 } from 'lucide-react'
 import { getSlTargetColorClass } from '@/utils/tradeTableHelpers'
 
+const formatTo12HourTime = (timeStr) => {
+  if (!timeStr) return 'N/A'
+  const [hour, minute] = timeStr.split(':').map(Number)
+  const period = hour >= 12 ? 'PM' : 'AM'
+  const formattedHour = hour % 12 === 0 ? 12 : hour % 12
+  const formattedMinute = minute.toString().padStart(2, '0')
+  return `${formattedHour}:${formattedMinute} ${period}`
+}
+
 const getOptionTypeColorClass = (optionType, direction) => {
   if (!optionType) {
     return 'text-gray-400'
@@ -35,7 +44,7 @@ export default function TradesTableBody({
   openDetailedModal,
   handleEditClick,
   handleDeleteClick,
-  showActions = true, 
+  showActions = true,
 }) {
   return (
     <tbody className="divide-y divide-zinc-700">
@@ -47,11 +56,18 @@ export default function TradesTableBody({
           } transition-colors duration-150`}
         >
           <td className="px-4 py-3 text-sm text-gray-200 whitespace-nowrap">
-            {new Date(trade.date).toLocaleDateString('en-GB', {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric',
-            })}
+            <div className="flex flex-col">
+              <span>
+                {new Date(trade.date).toLocaleDateString('en-GB', {
+                  day: '2-digit',
+                  month: 'short',
+                  year: 'numeric',
+                })}
+              </span>
+              <span className="text-gray-400 text-xs">
+                {formatTo12HourTime(trade.time)}
+              </span>
+            </div>
           </td>
           <td className="px-4 py-3 text-sm text-gray-200 whitespace-nowrap">
             {trade.symbol || trade.instrument}
@@ -144,7 +160,6 @@ export default function TradesTableBody({
             </div>
           </td>
 
-        
           {showActions && (
             <td className="px-4 py-3 text-sm text-gray-200 whitespace-nowrap">
               <div className="flex space-x-2">

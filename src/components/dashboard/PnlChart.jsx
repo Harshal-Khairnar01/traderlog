@@ -1,5 +1,4 @@
-// src/app/dashboard/components/PnlChart.jsx
-import React from 'react';
+import React from 'react'
 import {
   LineChart,
   Line,
@@ -8,7 +7,8 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-} from "recharts";
+} from 'recharts'
+import { format } from 'date-fns' // Import format from date-fns
 
 const PnlChart = ({ cumulativePnlData }) => {
   return (
@@ -27,23 +27,26 @@ const PnlChart = ({ cumulativePnlData }) => {
               <XAxis
                 dataKey="name"
                 stroke="#cbd5e0"
-                angle={-45}
+                angle={-30}
                 textAnchor="end"
                 height={60}
                 interval="preserveStartEnd"
+                // Format X-axis labels to "2 Aug"
+                tickFormatter={(tick) => format(new Date(tick), 'd MMM')}
               />
               <YAxis stroke="#cbd5e0" />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "#2d3748",
-                  border: "1px solid #4a5568",
-                  borderRadius: "4px",
+                  backgroundColor: '#2d3748',
+                  border: '1px solid #4a5568',
+                  borderRadius: '4px',
                 }}
-                itemStyle={{ color: "#cbd5e0" }}
-                labelStyle={{ color: "#a0aec0" }}
-                formatter={(value) =>
-                  `₹${value.toLocaleString("en-IN")}`
+                itemStyle={{ color: '#cbd5e0' }}
+                // Format tooltip label to "2 Aug, 03:30 PM"
+                labelFormatter={(label) =>
+                  format(new Date(label), 'd MMM, hh:mm a')
                 }
+                formatter={(value) => `₹${value.toLocaleString('en-IN')}`}
               />
               <Line
                 type="monotone"
@@ -53,38 +56,36 @@ const PnlChart = ({ cumulativePnlData }) => {
                 dot={false}
                 activeDot={{
                   r: 8,
-                  fill: "#8884d8",
-                  stroke: "#fff",
+                  fill: '#8884d8',
+                  stroke: '#fff',
                   strokeWidth: 2,
                 }}
               />
             </LineChart>
           </ResponsiveContainer>
           <p className="text-xl font-bold mt-4 text-center">
-            Current Total:{" "}
+            Current Total:{' '}
             <span
               className={
                 cumulativePnlData[cumulativePnlData.length - 1].pnl >= 0
-                  ? "text-green-400"
-                  : "text-red-400"
+                  ? 'text-green-400'
+                  : 'text-red-400'
               }
             >
               ₹
               {cumulativePnlData[
                 cumulativePnlData.length - 1
-              ].pnl.toLocaleString("en-IN")}
+              ].pnl.toLocaleString('en-IN')}
             </span>
           </p>
         </>
       ) : (
         <div className="flex-grow flex items-center justify-center text-gray-500">
-          <p>
-            No trade data available to generate cumulative P&L chart.
-          </p>
+          <p>No trade data available to generate cumulative P&L chart.</p>
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default PnlChart;
+export default PnlChart

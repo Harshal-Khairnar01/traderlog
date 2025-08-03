@@ -18,6 +18,7 @@ import Loader from '../Loader'
 const DashboardPage = () => {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false)
   const [showNewTradeModal, setShowNewTradeModal] = useState(false)
+  const [timeRange, setTimeRange] = useState('alltime')
 
   const profileDropdownRef = useRef(null)
   const dispatch = useDispatch()
@@ -36,14 +37,12 @@ const DashboardPage = () => {
     highestPnl,
     winRate,
     avgRiskReward,
-    tradesThisMonthCount,
+    tradesCount,
     cumulativePnlData,
     topProfitTrades,
     topLosingTrades,
     averageConfidenceLevel,
-  } = useTradeCalculations(tradeHistory)
-
- 
+  } = useTradeCalculations(tradeHistory, timeRange)
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -80,8 +79,7 @@ const DashboardPage = () => {
     )
   }
 
-  const displayConfidenceLevel =
-    tradeHistory.length > 0 ? averageConfidenceLevel : 0.5
+  const displayConfidenceLevel = tradesCount > 0 ? averageConfidenceLevel : 0.5
 
   return (
     <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center p-4 sm:p-6 lg:p-8">
@@ -92,6 +90,8 @@ const DashboardPage = () => {
         showProfileDropdown={showProfileDropdown}
         setShowProfileDropdown={setShowProfileDropdown}
         profileDropdownRef={profileDropdownRef}
+        timeRange={timeRange}
+        setTimeRange={setTimeRange}
       />
       <div className="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-3">
@@ -99,7 +99,8 @@ const DashboardPage = () => {
             highestPnl={highestPnl}
             winRate={winRate}
             avgRiskReward={avgRiskReward}
-            tradesThisMonthCount={tradesThisMonthCount}
+            tradesCount={tradesCount}
+            timeRange={timeRange}
           />
           <div className="mb-4">
             <TradingConfidenceIndex confidenceLevel={displayConfidenceLevel} />
