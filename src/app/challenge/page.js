@@ -2,6 +2,7 @@ import AppLayout from "@/components/AppLayout";
 import ChallengeClientPage from "@/components/challenge/ChallengeClientPage";
 
 import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
 import React from "react";
 import { authOptions } from "utils/auth";
 
