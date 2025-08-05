@@ -1,230 +1,468 @@
 // hooks/useChallengeMetrics.js
-import { useState, useEffect, useCallback } from "react";
-import { toast } from "react-toastify";
+import { useState, useEffect, useCallback } from 'react'
+import { toast } from 'react-toastify'
+import { useSelector, useDispatch } from 'react-redux'
+import { useSession } from 'next-auth/react'
+import { fetchTrades } from '@/store/tradesSlice'
 
-// Define a default challenge settings object
 const DEFAULT_CHALLENGE_SETTINGS = {
-  startingCapital: 30000,
-  targetCapital: 40000,
-  challengeEndDate: "2025-07-23", // YYYY-MM-DD (Default based on your screenshots, current date is July 26, 2025)
-};
+  startingCapital: 0,
+  targetCapital: 0,
+  challengeStartDate: '',
+  challengeStartTime: '',
+  challengeEndDate: '',
+}
 
 export const useChallengeMetrics = () => {
-  const [challengeData, setChallengeData] = useState(null);
-  const [tradeHistory, setTradeHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [challengeSettings, setChallengeSettings] = useState(DEFAULT_CHALLENGE_SETTINGS);
+  const { data: session, status } = useSession()
+  const dispatch = useDispatch()
 
-  // Function to calculate all dynamic metrics
-  const calculateMetrics = useCallback((trades, settings) => {
-    const { startingCapital, targetCapital, challengeEndDate } = settings;
+  const allTradeHistory = useSelector((state) => state.trades.tradeHistory)
+  const loadingTradesFromRedux = useSelector((state) => state.trades.loading)
+  const errorTradesFromRedux = useSelector((state) => state.trades.error)
 
-    if (!trades || trades.length === 0) {
-      const now = new Date();
-      const challengeEnd = new Date(challengeEndDate);
-      const timeRemainingMs = challengeEnd.getTime() - now.getTime();
-      const daysRemaining = Math.max(0, Math.ceil(timeRemainingMs / (1000 * 60 * 60 * 24)));
-      const potentialDailyTarget = daysRemaining > 0 ? (targetCapital - startingCapital) / daysRemaining : 0;
+  const [challengeData, setChallengeData] = useState(null)
+  const [challengeSettings, setChallengeSettings] = useState(
+    DEFAULT_CHALLENGE_SETTINGS,
+  )
+  const [challengeTradeHistory, setChallengeTradeHistory] = useState([])
+
+  const loading = loadingTradesFromRedux
+  const error = errorTradesFromRedux
+
+  const parseTradeDateTime = useCallback((trade) => {
+    const datePart = new Date(trade.date).toISOString().split('T')[0]
+    const timePart = (trade.time || '00:00').padStart(5, '0')
+    return new Date(`${datePart}T${timePart}:00`)
+  }, [])
+
+  const calculateAdjustedStartingCapital = useCallback(
+    (initialUserCapital, trades, challengeStartDateTime) => {
+      if (
+        initialUserCapital === undefined ||
+        !trades ||
+        !challengeStartDateTime
+      ) {
+        return initialUserCapital || 0
+      }
+
+      let preChallengePnl = 0
+      trades.forEach((trade) => {
+        const tradeDateTime = parseTradeDateTime(trade)
+        if (tradeDateTime < challengeStartDateTime) {
+          preChallengePnl += trade.netPnl || 0
+        }
+      })
+      return initialUserCapital + preChallengePnl
+    },
+    [parseTradeDateTime],
+  )
+
+  const calculateMetrics = useCallback(
+    (tradesForChallenge, settings, initialUserCapital) => {
+      const {
+        targetCapital,
+        challengeStartDate,
+        challengeStartTime,
+        challengeEndDate,
+      } = settings
+
+      const challengeStartDateTime =
+        challengeStartDate && challengeStartTime
+          ? new Date(`${challengeStartDate}T${challengeStartTime}:00`)
+          : null
+      const challengeEndDateTime = challengeEndDate
+        ? new Date(`${challengeEndDate}T23:59:59`)
+        : null
+
+      const actualChallengeStartingCapital = calculateAdjustedStartingCapital(
+        initialUserCapital,
+        allTradeHistory,
+        challengeStartDateTime,
+      )
+
+      if (
+        !tradesForChallenge ||
+        tradesForChallenge.length === 0 ||
+        !challengeEndDateTime ||
+        !targetCapital ||
+        !challengeStartDateTime
+      ) {
+        const now = new Date()
+        const effectiveChallengeEnd = challengeEndDateTime || now
+        const timeRemainingMs = effectiveChallengeEnd.getTime() - now.getTime()
+        const daysRemaining = Math.max(
+          0,
+          Math.ceil(timeRemainingMs / (1000 * 60 * 60 * 24)),
+        )
+        const potentialDailyTarget =
+          daysRemaining > 0 &&
+          targetCapital &&
+          actualChallengeStartingCapital !== undefined
+            ? (targetCapital - actualChallengeStartingCapital) / daysRemaining
+            : 0
+
+        return {
+          summary: {
+            startingCapital: actualChallengeStartingCapital,
+            currentCapital: actualChallengeStartingCapital,
+            targetCapital: targetCapital || 0,
+            dailyTarget: potentialDailyTarget,
+            dailyActual: 0,
+            daysRemaining: daysRemaining,
+            projectedDate: challengeEndDate
+              ? new Date(challengeEndDate).toLocaleDateString('en-US', {
+                  day: '2-digit',
+                  month: 'short',
+                  year: '2-digit',
+                })
+              : 'N/A',
+            winRate: 0,
+            progressToTarget: 0,
+          },
+          performance: {
+            avgRiskReward: null,
+            highestProfitDay: 0,
+            highestProfitDayDate: 'N/A',
+            maxDrawdown: 0,
+            tradingConfidenceLevel: 0,
+          },
+        }
+      }
+
+      const sortedTradesForCalculations = [...tradesForChallenge].sort(
+        (a, b) =>
+          parseTradeDateTime(a).getTime() - parseTradeDateTime(b).getTime(),
+      )
+
+      let totalPNL = 0
+      let profitableTrades = 0
+      let totalTrades = 0
+      let highestProfit = 0
+      let highestProfitDate = 'N/A'
+      let equityCurve = [actualChallengeStartingCapital]
+      let maxEquity = actualChallengeStartingCapital
+      let maxDrawdown = 0
+      let totalConfidenceLevel = 0
+      let tradesWithConfidence = 0
+
+      const tradesWithPnL = sortedTradesForCalculations.filter(
+        (trade) => trade.netPnl !== null && !isNaN(trade.netPnl),
+      )
+
+      tradesWithPnL.forEach((trade) => {
+        totalPNL += trade.netPnl
+        totalTrades++
+        if (trade.netPnl > 0) {
+          profitableTrades++
+        }
+
+        if (
+          typeof trade.confidenceLevel === 'number' &&
+          !isNaN(trade.confidenceLevel)
+        ) {
+          totalConfidenceLevel += trade.confidenceLevel
+          tradesWithConfidence++
+        }
+
+        if (trade.netPnl > highestProfit) {
+          highestProfit = trade.netPnl
+          highestProfitDate = new Date(trade.date).toLocaleDateString('en-US', {
+            day: '2-digit',
+            month: 'short',
+            year: '2-digit',
+          })
+        }
+
+        const currentEquity = equityCurve[equityCurve.length - 1] + trade.netPnl
+        equityCurve.push(currentEquity)
+
+        if (currentEquity > maxEquity) {
+          maxEquity = currentEquity
+        }
+        const currentDrawdown = ((maxEquity - currentEquity) / maxEquity) * 100
+        if (currentDrawdown > maxDrawdown) {
+          maxDrawdown = currentDrawdown
+        }
+      })
+
+      const currentCapital = actualChallengeStartingCapital + totalPNL
+      const progressToTarget = Math.min(
+        1,
+        Math.max(
+          0,
+          (currentCapital - actualChallengeStartingCapital) /
+            (targetCapital - actualChallengeStartingCapital),
+        ),
+      )
+      const winRate = totalTrades > 0 ? profitableTrades / totalTrades : 0
+
+      const now = new Date()
+      const timeRemainingMs = challengeEndDateTime.getTime() - now.getTime()
+      const daysRemaining = Math.max(
+        0,
+        Math.ceil(timeRemainingMs / (1000 * 60 * 60 * 24)),
+      )
+      const remainingToTarget = targetCapital - currentCapital
+      const dailyTarget =
+        daysRemaining > 0 ? remainingToTarget / daysRemaining : 0
+
+      let dailyPnlSum = 0
+      const today = now.toISOString().split('T')[0]
+      tradesWithPnL.forEach((trade) => {
+        if (new Date(trade.date).toISOString().split('T')[0] === today) {
+          dailyPnlSum += trade.netPnl
+        }
+      })
+
+      let tradingConfidenceLevel = 0
+      const winRatePercentage = winRate * 100
+
+      const averageTradeConfidencePercentage =
+        tradesWithConfidence > 0
+          ? (totalConfidenceLevel / tradesWithConfidence) * 10
+          : 0
+
+      if (totalTrades > 0 || tradesWithConfidence > 0) {
+        tradingConfidenceLevel =
+          (winRatePercentage + averageTradeConfidencePercentage) / 2
+      }
+      tradingConfidenceLevel = Math.min(
+        100,
+        Math.max(0, tradingConfidenceLevel),
+      )
+
+      const calculatedAvgRR = tradesWithPnL
+        .filter(
+          (t) =>
+            t.riskReward !== null && !isNaN(t.riskReward) && t.riskReward > 0,
+        )
+        .reduce((acc, t) => acc + t.riskReward, 0)
+      const avgRiskReward =
+        tradesWithPnL.filter(
+          (t) =>
+            t.riskReward !== null && !isNaN(t.riskReward) && t.riskReward > 0,
+        ).length > 0
+          ? calculatedAvgRR /
+            tradesWithPnL.filter(
+              (t) =>
+                t.riskReward !== null &&
+                !isNaN(t.riskReward) &&
+                t.riskReward > 0,
+            ).length
+          : null
 
       return {
         summary: {
-          startingCapital: startingCapital,
-          currentCapital: startingCapital,
+          startingCapital: actualChallengeStartingCapital,
+          currentCapital: currentCapital,
           targetCapital: targetCapital,
-          dailyTarget: potentialDailyTarget,
-          dailyActual: 0,
+          dailyTarget: dailyTarget,
+          dailyActual: dailyPnlSum,
           daysRemaining: daysRemaining,
-          projectedDate: new Date(challengeEndDate).toLocaleDateString("en-US", { day: '2-digit', month: 'short', year: '2-digit' }),
-          winRate: 0,
-          progressToTarget: 0,
+          projectedDate: challengeEndDateTime.toLocaleDateString('en-US', {
+            day: '2-digit',
+            month: 'short',
+            year: '2-digit',
+          }),
+          winRate: winRate,
+          progressToTarget: progressToTarget,
         },
         performance: {
-          avgRiskReward: null,
-          highestProfitDay: 0,
-          highestProfitDayDate: "N/A",
-          maxDrawdown: 0,
-          tradingConfidenceLevel: 0, // Default to 0 for numerical confidence
+          avgRiskReward: avgRiskReward,
+          highestProfitDay: highestProfit,
+          highestProfitDayDate: highestProfitDate,
+          maxDrawdown: maxDrawdown,
+          tradingConfidenceLevel: tradingConfidenceLevel,
         },
-      };
-    }
-
-    // Sort trades by date to ensure correct order for P&L and drawdown
-    const sortedTrades = [...trades].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-    let totalPNL = 0;
-    let profitableTrades = 0;
-    let totalTrades = 0;
-    let highestProfit = 0;
-    let highestProfitDate = "N/A";
-    let equityCurve = [startingCapital]; // Start with initial capital from settings
-    let maxEquity = startingCapital;
-    let maxDrawdown = 0; // In percentage
-    let totalConfidenceLevel = 0; // For summing up individual trade confidence levels
-    let tradesWithConfidence = 0; // Count trades that have a valid confidence level
-
-    // For win rate calculation: consider only trades with P&L
-    const tradesWithPnL = sortedTrades.filter(trade => trade.pnlAmount !== null && !isNaN(trade.pnlAmount));
-
-    tradesWithPnL.forEach(trade => {
-      totalPNL += trade.pnlAmount;
-      totalTrades++;
-      if (trade.pnlAmount > 0) {
-        profitableTrades++;
       }
-
-      // Summing up confidence levels
-      if (typeof trade.confidenceLevel === 'number' && !isNaN(trade.confidenceLevel)) {
-        totalConfidenceLevel += trade.confidenceLevel;
-        tradesWithConfidence++;
-      }
-
-
-      // Highest Profit Day (for a single trade's P&L)
-      if (trade.pnlAmount > highestProfit) {
-        highestProfit = trade.pnlAmount;
-        highestProfitDate = new Date(trade.date).toLocaleDateString("en-US", { day: '2-digit', month: 'short', year: '2-digit' });
-      }
-
-      // Calculate Equity Curve for Drawdown
-      const currentEquity = equityCurve[equityCurve.length - 1] + trade.pnlAmount;
-      equityCurve.push(currentEquity);
-
-      if (currentEquity > maxEquity) {
-        maxEquity = currentEquity;
-      }
-      const currentDrawdown = ((maxEquity - currentEquity) / maxEquity) * 100;
-      if (currentDrawdown > maxDrawdown) {
-        maxDrawdown = currentDrawdown;
-      }
-    });
-
-    const currentCapital = startingCapital + totalPNL;
-    const progressToTarget = Math.min(1, Math.max(0, (currentCapital - startingCapital) / (targetCapital - startingCapital)));
-    const winRate = totalTrades > 0 ? profitableTrades / totalTrades : 0; // 0-1 scale
-
-    // Daily Target and Days Remaining
-    const challengeEnd = new Date(challengeEndDate);
-    const now = new Date(); // Current date for calculations
-    const timeRemainingMs = challengeEnd.getTime() - now.getTime();
-    const daysRemaining = Math.max(0, Math.ceil(timeRemainingMs / (1000 * 60 * 60 * 24)));
-    const remainingToTarget = targetCapital - currentCapital;
-    const dailyTarget = daysRemaining > 0 ? remainingToTarget / daysRemaining : 0;
-
-    // Aggregate daily P&L for 'dailyActual'
-    let dailyPnlSum = 0;
-    const today = now.toISOString().split('T')[0]; // YYYY-MM-DD
-    tradesWithPnL.forEach(trade => {
-        if (trade.date === today) { // Assuming trade.date is also YYYY-MM-DD
-            dailyPnlSum += trade.pnlAmount;
-        }
-    });
-
-    // Calculate numerical Trading Confidence Level (0-100%)
-    let tradingConfidenceLevel = 0;
-    const winRatePercentage = winRate * 100; // Scale win rate to 0-100%
-
-    // Calculate average individual trade confidence level (scaled to 0-100%)
-    const averageTradeConfidencePercentage = tradesWithConfidence > 0 ? (totalConfidenceLevel / tradesWithConfidence) * 10 : 0;
-    // The `* 10` is because your individual `confidenceLevel` is 1-10, so multiply by 10 to get 10-100.
-
-    // Combine win rate and average trade confidence. You can adjust weighting.
-    // Here, a simple average of the two scaled values is used.
-    if (totalTrades > 0 || tradesWithConfidence > 0) {
-      tradingConfidenceLevel = (winRatePercentage + averageTradeConfidencePercentage) / 2;
-    }
-    // Ensure it's clamped between 0 and 100
-    tradingConfidenceLevel = Math.min(100, Math.max(0, tradingConfidenceLevel));
-
-
-    // Avg Risk:Reward
-    const calculatedAvgRR = tradesWithPnL.filter(t => t.riskReward !== null && !isNaN(t.riskReward) && t.riskReward > 0).reduce((acc, t) => acc + t.riskReward, 0);
-    const avgRiskReward = tradesWithPnL.filter(t => t.riskReward !== null && !isNaN(t.riskReward) && t.riskReward > 0).length > 0 ?
-                                  calculatedAvgRR / tradesWithPnL.filter(t => t.riskReward !== null && !isNaN(t.riskReward) && t.riskReward > 0).length : null;
-
-
-    return {
-      summary: {
-        startingCapital: startingCapital,
-        currentCapital: currentCapital,
-        targetCapital: targetCapital,
-        dailyTarget: dailyTarget,
-        dailyActual: dailyPnlSum,
-        daysRemaining: daysRemaining,
-        projectedDate: challengeEnd.toLocaleDateString("en-US", { day: '2-digit', month: 'short', year: '2-digit' }),
-        winRate: winRate, // Keep as 0-1 for summary, TradingConfidenceIndex uses 0-100
-        progressToTarget: progressToTarget,
-      },
-      performance: {
-        avgRiskReward: avgRiskReward,
-        highestProfitDay: highestProfit,
-        highestProfitDayDate: highestProfitDate,
-        maxDrawdown: maxDrawdown,
-        tradingConfidenceLevel: tradingConfidenceLevel, // Now a number 0-100
-      },
-    };
-  }, []);
-
-  // Effect to load data from localStorage
-  const loadDataFromLocalStorage = useCallback(() => {
-    setLoading(true);
-    try {
-      // Load challenge settings
-      const storedSettings = localStorage.getItem("challengeSettings");
-      let currentSettings = DEFAULT_CHALLENGE_SETTINGS;
-      if (storedSettings) {
-        currentSettings = JSON.parse(storedSettings);
-      }
-      setChallengeSettings(currentSettings); // Update state with loaded settings
-
-      // Load trade journal data
-      const storedTrades = localStorage.getItem("tradeJournalData");
-      let parsedTrades = [];
-      if (storedTrades) {
-        parsedTrades = JSON.parse(storedTrades);
-      }
-      setTradeHistory(parsedTrades);
-
-      // Calculate metrics with loaded settings and trades
-      setChallengeData(calculateMetrics(parsedTrades, currentSettings));
-    } catch (err) {
-      console.error("Error loading data from localStorage:", err);
-      setError("Failed to load data from local storage.");
-      toast.error("Failed to load data from local storage.");
-    } finally {
-      setLoading(false);
-    }
-  }, [calculateMetrics]);
+    },
+    [calculateAdjustedStartingCapital, parseTradeDateTime, allTradeHistory],
+  )
 
   useEffect(() => {
-    loadDataFromLocalStorage();
+    if (status === 'authenticated') {
+      dispatch(fetchTrades())
+    } else if (status === 'unauthenticated') {
+      localStorage.removeItem('challengeSettings')
+      setChallengeSettings(DEFAULT_CHALLENGE_SETTINGS)
+      setChallengeData(null)
+      setChallengeTradeHistory([])
+    }
+  }, [status, dispatch])
 
-    // Listen for storage events if data might change in other tabs/windows
-    const handleStorageChange = (event) => {
-        if (event.key === "tradeJournalData" || event.key === "challengeSettings") {
-            loadDataFromLocalStorage();
+  useEffect(() => {
+    let currentSettings = { ...DEFAULT_CHALLENGE_SETTINGS }
+    try {
+      const storedSettings = localStorage.getItem('challengeSettings')
+      if (storedSettings) {
+        const parsedSettings = JSON.parse(storedSettings)
+        currentSettings = { ...currentSettings, ...parsedSettings }
+      }
+    } catch (err) {
+      console.error('Error loading challenge settings from localStorage:', err)
+      toast.error('Failed to load challenge settings from local storage.')
+    }
+
+    if (
+      status === 'authenticated' &&
+      session?.user?.initialCapital !== undefined &&
+      allTradeHistory.length > 0 &&
+      currentSettings.challengeStartDate &&
+      currentSettings.challengeStartTime
+    ) {
+      const challengeStartDateTime = new Date(
+        `${currentSettings.challengeStartDate}T${currentSettings.challengeStartTime}:00`,
+      )
+      const reCalculatedAdjustedStartingCapital =
+        calculateAdjustedStartingCapital(
+          session.user.initialCapital,
+          allTradeHistory,
+          challengeStartDateTime,
+        )
+      currentSettings = {
+        ...currentSettings,
+        startingCapital: reCalculatedAdjustedStartingCapital,
+      }
+    } else if (
+      status === 'authenticated' &&
+      session?.user?.initialCapital === undefined
+    ) {
+      setChallengeData(null)
+      setChallengeTradeHistory([])
+      setChallengeSettings(currentSettings)
+      return
+    }
+
+    setChallengeSettings(currentSettings)
+
+    if (
+      !loadingTradesFromRedux &&
+      !errorTradesFromRedux &&
+      status === 'authenticated' &&
+      session?.user?.initialCapital !== undefined
+    ) {
+      const { challengeStartDate, challengeStartTime, challengeEndDate } =
+        currentSettings
+
+      const challengeStartDateTime =
+        challengeStartDate && challengeStartTime
+          ? new Date(`${challengeStartDate}T${challengeStartTime}:00`)
+          : null
+      const challengeEndDateTime = challengeEndDate
+        ? new Date(`${challengeEndDate}T23:59:59`)
+        : null
+
+      let filteredTrades = allTradeHistory.filter((trade) => {
+        const tradeDateTime = parseTradeDateTime(trade)
+        return (
+          challengeStartDateTime &&
+          tradeDateTime >= challengeStartDateTime &&
+          challengeEndDateTime &&
+          tradeDateTime <= challengeEndDateTime
+        )
+      })
+
+      filteredTrades = filteredTrades.sort((a, b) => {
+        const dateTimeA = parseTradeDateTime(a)
+        const dateTimeB = parseTradeDateTime(b)
+        return dateTimeB.getTime() - dateTimeA.getTime()
+      })
+
+      setChallengeTradeHistory(filteredTrades)
+
+      setChallengeData(
+        calculateMetrics(
+          filteredTrades,
+          currentSettings,
+          session.user.initialCapital,
+        ),
+      )
+    } else {
+      setChallengeData(null)
+      setChallengeTradeHistory([])
+    }
+  }, [
+    status,
+    session?.user?.initialCapital,
+    allTradeHistory,
+    calculateAdjustedStartingCapital,
+    calculateMetrics,
+    loadingTradesFromRedux,
+    errorTradesFromRedux,
+    parseTradeDateTime,
+  ])
+
+  useEffect(() => {
+    if (challengeSettings.challengeEndDate) {
+      const challengeEnd = new Date(
+        `${challengeSettings.challengeEndDate}T23:59:59`,
+      )
+      const now = new Date()
+      if (challengeEnd < now) {
+        toast.info('Your challenge has ended! Setting up for a new one.')
+        localStorage.removeItem('challengeSettings')
+        setChallengeSettings({
+          ...DEFAULT_CHALLENGE_SETTINGS,
+          startingCapital: session?.user?.initialCapital ?? 0,
+          challengeEndDate: '',
+        })
+        setChallengeData(null)
+        setChallengeTradeHistory([])
+      }
+    }
+  }, [challengeSettings.challengeEndDate, session?.user?.initialCapital])
+
+  const handleSaveChallengeSettings = useCallback(
+    (newSettings) => {
+      try {
+        const initialUserCapital = session?.user?.initialCapital ?? 0
+        const newChallengeStartDateTime =
+          newSettings.challengeStartDate && newSettings.challengeStartTime
+            ? new Date(
+                `${newSettings.challengeStartDate}T${newSettings.challengeStartTime}:00`,
+              )
+            : null
+
+        const adjustedStartingCapital = calculateAdjustedStartingCapital(
+          initialUserCapital,
+          allTradeHistory,
+          newChallengeStartDateTime,
+        )
+
+        const settingsToSave = {
+          targetCapital: newSettings.targetCapital,
+          challengeStartDate: newSettings.challengeStartDate,
+          challengeStartTime: newSettings.challengeStartTime,
+          challengeEndDate: newSettings.challengeEndDate,
+          startingCapital: adjustedStartingCapital,
         }
-    };
-    window.addEventListener("storage", handleStorageChange);
-    return () => {
-        window.removeEventListener("storage", handleStorageChange);
-    };
-  }, [loadDataFromLocalStorage]);
 
+        localStorage.setItem(
+          'challengeSettings',
+          JSON.stringify(settingsToSave),
+        )
 
-  const handleSaveChallengeSettings = useCallback((newSettings) => {
-    localStorage.setItem("challengeSettings", JSON.stringify(newSettings));
-    setChallengeSettings(newSettings); // Update state
-    // Recalculate all metrics immediately with new settings and existing trades
-    setChallengeData(calculateMetrics(tradeHistory, newSettings));
-  }, [calculateMetrics, tradeHistory]); // Depend on calculateMetrics and tradeHistory
+        setChallengeSettings(settingsToSave)
+        toast.success('Challenge settings saved!')
+      } catch (err) {
+        console.error('Error saving challenge settings to localStorage:', err)
+        toast.error('Failed to save challenge settings.')
+      }
+    },
+    [
+      session?.user?.initialCapital,
+      allTradeHistory,
+      calculateAdjustedStartingCapital,
+    ],
+  )
 
   return {
     challengeData,
-    tradeHistory,
+    tradeHistory: challengeTradeHistory,
     loading,
     error,
     challengeSettings,
     handleSaveChallengeSettings,
-  };
-};
+  }
+}

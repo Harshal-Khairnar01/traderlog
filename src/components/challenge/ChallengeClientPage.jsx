@@ -1,14 +1,15 @@
+'use client'
 
-"use client";
-
-import React, { useState } from "react";
-import { Grid3x3 } from "lucide-react";
-import ChallengeSummaryMetrics from "./ChallengeSummaryMetrics";
-import PerformanceMetricsRow from "./PerformanceMetricsRow";
-import TradingConfidenceIndex from "./TradingConfidenceIndex";
-import TradeHistoryTable from "./TradeHistoryTable";
-import SetChallengeModal from "./SetChallengeModal";
-import { useChallengeMetrics } from "@/hooks/useChallengeMetrics";
+import React, { useState } from 'react'
+import { Grid3x3 } from 'lucide-react'
+import ChallengeSummaryMetrics from './ChallengeSummaryMetrics'
+import PerformanceMetricsRow from './PerformanceMetricsRow'
+import TradingConfidenceIndex from './TradingConfidenceIndex'
+import TradeHistoryTable from './TradeHistoryTable'
+import SetChallengeModal from './SetChallengeModal'
+import { useChallengeMetrics } from '@/hooks/useChallengeMetrics'
+import AllTradesTable from '../all-trades/AllTradesTable'
+import Loader from '../Loader'
 
 const ChallengeClientPage = () => {
   const {
@@ -18,19 +19,15 @@ const ChallengeClientPage = () => {
     error,
     challengeSettings,
     handleSaveChallengeSettings,
-  } = useChallengeMetrics();
+  } = useChallengeMetrics()
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
+  const openModal = () => setIsModalOpen(true)
+  const closeModal = () => setIsModalOpen(false)
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen text-white">
-        Loading challenge data...
-      </div>
-    );
+    return <Loader message=" Loading challenge data..." />
   }
 
   if (error) {
@@ -38,7 +35,7 @@ const ChallengeClientPage = () => {
       <div className="flex justify-center items-center min-h-screen text-red-500">
         Error: {error}
       </div>
-    );
+    )
   }
 
   if (!challengeData) {
@@ -59,7 +56,7 @@ const ChallengeClientPage = () => {
           initialSettings={challengeSettings}
         />
       </div>
-    );
+    )
   }
 
   return (
@@ -92,7 +89,12 @@ const ChallengeClientPage = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-6">
-        <TradeHistoryTable tradeHistory={tradeHistory} />
+        <AllTradesTable
+          trades={tradeHistory}
+          showActions={false}
+          onDeleteTrade={() => {}}
+          onEditTrade={() => {}}
+        />
       </div>
 
       <SetChallengeModal
@@ -102,7 +104,7 @@ const ChallengeClientPage = () => {
         initialSettings={challengeSettings}
       />
     </div>
-  );
-};
+  )
+}
 
-export default ChallengeClientPage;
+export default ChallengeClientPage
