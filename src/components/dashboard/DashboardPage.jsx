@@ -8,7 +8,10 @@ import { fetchTrades, addTrade } from '@/store/tradesSlice'
 import { useTradeCalculations } from '@/hooks/useTradeCalculations'
 
 import DashboardHeader from '@/components/dashboard/DashboardHeader'
-import DashboardCards from '@/components/dashboard/DashboardCards'
+import {
+  PerformanceCards,
+  CapitalAndChargesCards,
+} from '@/components/dashboard/DashboardCards'
 import PnlChart from '@/components/dashboard/PnlChart'
 import TopTrades from '@/components/dashboard/TopTrades'
 import TradingConfidenceIndex from '@/components/challenge/TradingConfidenceIndex'
@@ -26,6 +29,7 @@ const DashboardPage = () => {
   const { data: session, status } = useSession()
   const userName = session?.user?.name || 'Guest'
   const userInitial = userName.charAt(0).toUpperCase()
+  const initialCapital = session?.user?.initialCapital || 0
 
   const { tradeHistory, loading, error } = useSelector((state) => state.trades)
 
@@ -42,7 +46,10 @@ const DashboardPage = () => {
     topProfitTrades,
     topLosingTrades,
     averageConfidenceLevel,
-  } = useTradeCalculations(tradeHistory, timeRange)
+    totalCharges,
+    currentCapital,
+    maxDrawdown,
+  } = useTradeCalculations(tradeHistory, timeRange, initialCapital)
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -95,7 +102,13 @@ const DashboardPage = () => {
       />
       <div className="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-3">
-          <DashboardCards
+          <CapitalAndChargesCards
+            initialCapital={initialCapital}
+            currentCapital={currentCapital}
+            totalCharges={totalCharges}
+            maxDrawdown={maxDrawdown}
+          />
+          <PerformanceCards
             highestPnl={highestPnl}
             winRate={winRate}
             avgRiskReward={avgRiskReward}

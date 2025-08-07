@@ -32,7 +32,6 @@ export default function AllTradesTable({
     modalContent,
     isSimpleTextModal,
     openDetailedModal,
-    openTruncatedContentModal,
     closeModal,
   } = useTradeDetailModal()
 
@@ -74,7 +73,6 @@ export default function AllTradesTable({
               <TradesTableBody
                 trades={trades}
                 openDetailedModal={openDetailedModal}
-                openTruncatedContentModal={openTruncatedContentModal}
                 handleEditClick={handleEditClick}
                 handleDeleteClick={openConfirmation}
                 showActions={showActions}

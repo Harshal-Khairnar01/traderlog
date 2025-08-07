@@ -1,7 +1,11 @@
 import { useMemo } from 'react'
 import { parseISO, isValid, subDays, isWithinInterval } from 'date-fns'
 
-export const useTradeCalculations = (tradeHistory, timeRange) => {
+export const useTradeCalculations = (
+  tradeHistory,
+  timeRange,
+  initialCapital,
+) => {
   const currentInterval = useMemo(() => {
     if (timeRange === 'alltime') {
       return null
@@ -66,6 +70,52 @@ export const useTradeCalculations = (tradeHistory, timeRange) => {
     }
   }, [currentPeriodTrades])
 
+  const totalCharges = useMemo(() => {
+    return currentPeriodTrades.reduce(
+      (sum, trade) => sum + (trade.charges || 0),
+      0,
+    )
+  }, [currentPeriodTrades])
+
+  const currentCapital = useMemo(() => {
+    if (tradeHistory.length === 0) return initialCapital
+    const totalPnl = tradeHistory.reduce(
+      (sum, trade) => sum + (trade.netPnl || 0),
+      0,
+    )
+    return initialCapital + totalPnl
+  }, [tradeHistory, initialCapital])
+
+  const maxDrawdown = useMemo(() => {
+    if (currentPeriodTrades.length === 0) return 0
+
+    let peakCapital = initialCapital
+    let maxDD = 0
+    let currentCapitalValue = initialCapital
+
+    const sortedTrades = [...currentPeriodTrades].sort((a, b) => {
+      const dateTimeA = parseISO(`${a.date.split('T')[0]}T${a.time}:00.000Z`)
+      const dateTimeB = parseISO(`${b.date.split('T')[0]}T${b.time}:00.000Z`)
+      if (!isValid(dateTimeA) && !isValid(dateTimeB)) return 0
+      if (!isValid(dateTimeA)) return 1
+      if (!isValid(dateTimeB)) return -1
+      return dateTimeA.getTime() - dateTimeB.getTime()
+    })
+
+    sortedTrades.forEach((trade) => {
+      currentCapitalValue += trade.netPnl || 0
+      if (currentCapitalValue > peakCapital) {
+        peakCapital = currentCapitalValue
+      }
+      const drawdown = peakCapital - currentCapitalValue
+      if (drawdown > maxDD) {
+        maxDD = drawdown
+      }
+    })
+
+    return maxDD
+  }, [currentPeriodTrades, initialCapital])
+
   const cumulativePnlData = useMemo(() => {
     if (currentPeriodTrades.length === 0) return []
     const sortedTrades = [...currentPeriodTrades].sort((a, b) => {
@@ -124,5 +174,9 @@ export const useTradeCalculations = (tradeHistory, timeRange) => {
     topProfitTrades,
     topLosingTrades,
     averageConfidenceLevel,
+    initialCapital,
+    currentCapital,
+    totalCharges,
+    maxDrawdown,
   }
 }

@@ -5,7 +5,7 @@ export default function ConfirmationModal({ isOpen, onClose, onConfirm, title, m
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
       <div className="bg-zinc-800 rounded-lg shadow-xl text-white w-full max-w-md p-6">
         <h3 className="text-xl font-bold mb-4">{title}</h3>
         <p className="mb-6">{message}</p>

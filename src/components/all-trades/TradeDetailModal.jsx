@@ -40,10 +40,10 @@ const TradeDetailModal = ({
 }) => {
   if (!isOpen) return null
 
-  console.log(tradeData)
+
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 px-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4">
       <div className="bg-zinc-900 p-6 rounded-2xl shadow-2xl w-full max-w-4xl border border-zinc-700 overflow-hidden">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-white">{title}</h2>
