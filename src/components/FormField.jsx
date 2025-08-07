@@ -1,10 +1,9 @@
-// components/FormField.js
-import React from "react";
+import React, { useRef } from 'react'
 
 export default function FormField({
   label,
   id,
-  type = "text",
+  type = 'text',
   placeholder,
   options,
   rows,
@@ -15,23 +14,34 @@ export default function FormField({
   onChange,
   className,
   children,
+  required,
   ...props
 }) {
+  const inputRef = useRef(null)
   const inputClasses =
-    "appearance-none   w-full py-2 px-3 text-gray-400 leading-tight  outline-none   border-b border-zinc-400  focus:border-blue-500  transition-all duration-300 delay-200";
+    'appearance-none w-full py-2 px-3 text-gray-400 leading-tight outline-none border-b border-zinc-400 focus:border-blue-500 transition-all duration-300 delay-200'
 
-  let inputElement;
+  
+  const handleInputClick = () => {
+    if (inputRef.current && (type === 'date' || type === 'time')) {
+      if (typeof inputRef.current.showPicker === 'function') {
+        inputRef.current.showPicker()
+      }
+    }
+  }
 
-  const controlledValue = value === undefined || value === null ? "" : value;
+  let inputElement
+  const controlledValue = value === undefined || value === null ? '' : value
 
   switch (type) {
-    case "select":
+    case 'select':
       inputElement = (
         <select
           id={id}
           className={inputClasses}
           value={controlledValue}
           onChange={onChange}
+          ref={inputRef}
           {...props}
         >
           {options &&
@@ -41,10 +51,10 @@ export default function FormField({
               </option>
             ))}
         </select>
-      );
-      break;
+      )
+      break
 
-    case "textarea":
+    case 'textarea':
       inputElement = (
         <textarea
           id={id}
@@ -53,12 +63,13 @@ export default function FormField({
           placeholder={placeholder}
           value={controlledValue}
           onChange={onChange}
+          ref={inputRef}
           {...props}
         ></textarea>
-      );
-      break;
+      )
+      break
 
-    case "radio-group":
+    case 'radio-group':
       inputElement = (
         <div className="flex items-center space-x-4">
           {options &&
@@ -69,7 +80,7 @@ export default function FormField({
                   name={id}
                   value={option.value}
                   className={`form-radio ${
-                    option.colorClass || "text-blue-600"
+                    option.colorClass || 'text-blue-600'
                   }`}
                   checked={controlledValue === option.value}
                   onChange={onChange}
@@ -79,10 +90,10 @@ export default function FormField({
               </label>
             ))}
         </div>
-      );
-      break;
+      )
+      break
 
-    case "range":
+    case 'range':
       inputElement = (
         <>
           <input
@@ -91,29 +102,30 @@ export default function FormField({
             min={min}
             max={max}
             value={
-              controlledValue === ""
+              controlledValue === ''
                 ? min !== undefined
                   ? String(min)
-                  : "0"
+                  : '0'
                 : String(controlledValue)
             }
             onChange={onChange}
-            className="w-full h-2 bg-zinc-600 rounded-lg appearance-none cursor-pointer range-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full h-2 bg-zinc-600 rounded-lg appearance-none cursor-pointer range-lg  focus:border-transparent"
+            ref={inputRef}
             {...props}
           />
           {children}
         </>
-      );
-      break;
+      )
+      break
 
-    case "file":
+    case 'file':
       inputElement = (
         <>
           <label
             htmlFor={id}
             className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
           >
-            {label || "Choose File"}
+            {label || 'Choose File'}
           </label>
           <input
             type="file"
@@ -121,11 +133,12 @@ export default function FormField({
             accept="image/*"
             className="hidden"
             onChange={onChange}
+            ref={inputRef}
             {...props}
           />
         </>
-      );
-      return <div className={className}>{inputElement}</div>;
+      )
+      break
 
     default:
       inputElement = (
@@ -137,27 +150,31 @@ export default function FormField({
           step={step}
           value={controlledValue}
           onChange={onChange}
+          ref={inputRef}
+          onClick={handleInputClick}
           {...props}
         />
-      );
+      )
   }
 
   return (
     <div className={className}>
-      {label && type !== "file" && type !== "radio-group" && (
+      {label && type !== 'file' && type !== 'radio-group' && (
         <label
           htmlFor={id}
           className="block text-gray-400 text-sm font-bold mb-2"
         >
           {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
-      {label && type === "radio-group" && (
+      {label && type === 'radio-group' && (
         <label className="block text-gray-400 text-sm font-bold mb-2">
           {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
       {inputElement}
     </div>
-  );
+  )
 }

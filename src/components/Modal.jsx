@@ -25,7 +25,7 @@ const Modal = ({ children, onClose }) => {
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
       <div
         ref={modalRef}
         className="relative bg-zinc-900 rounded-lg shadow-xl w-11/12 max-w-5xl"
@@ -34,7 +34,7 @@ const Modal = ({ children, onClose }) => {
       >
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 text-gray-400 hover:text-gray-200 text-4xl cursor-pointer"
+          className="absolute top-3 right-6 text-gray-400 hover:text-gray-200 text-4xl cursor-pointer"
           aria-label="Close modal"
         >
           &times;

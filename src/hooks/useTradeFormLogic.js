@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'react-toastify'
 
-const initialFormData = {
+const initialGeneralData = {
   marketType: 'Indian',
   symbol: '',
   date: '',
@@ -23,6 +23,10 @@ const initialFormData = {
   strategyUsed: 'Select Strategy',
   outcomeSummary: 'Select Outcome Summary',
   tradeAnalysis: '',
+  screenshotUpload: null,
+}
+
+const initialPsychologyData = {
   confidenceLevel: '5',
   emotionsBefore: 'Calm',
   emotionsAfter: 'Satisfied',
@@ -31,8 +35,9 @@ const initialFormData = {
   mistakeChecklist: [],
   whatIDidWell: '',
   tags: '',
-  screenshotUpload: null,
 }
+
+const initialFormData = { ...initialGeneralData, ...initialPsychologyData }
 
 export const useTradeFormLogic = (
   tradeToEdit,
@@ -116,7 +121,7 @@ export const useTradeFormLogic = (
         tags: Array.isArray(tradeToEdit.tags)
           ? tradeToEdit.tags.join(', ')
           : tradeToEdit.tags || '',
-        screenshotUpload: null, 
+        screenshotUpload: null,
       })
     } else {
       setFormData(initialFormData)
@@ -230,9 +235,43 @@ export const useTradeFormLogic = (
     [formData, tradeToEdit, addTrade, updateTrade, onClose],
   )
 
+  const resetGeneral = useCallback(() => {
+    setFormData((prevData) => ({
+      ...prevData,
+      ...initialGeneralData,
+    }))
+    toast.info('General fields have been reset!')
+  }, [])
+
+  const resetPsychology = useCallback(() => {
+    setFormData((prevData) => ({
+      ...prevData,
+      ...initialPsychologyData,
+    }))
+    toast.info('Psychology fields have been reset!')
+  }, [])
+
   const handleReset = useCallback(() => {
     if (tradeToEdit) {
-      setFormData(initialFormData)
+      const formattedDate = tradeToEdit.date
+        ? new Date(tradeToEdit.date).toISOString().split('T')[0]
+        : ''
+      setFormData({
+        ...initialFormData,
+        ...tradeToEdit,
+        date: formattedDate,
+        confidenceLevel: tradeToEdit.psychology?.confidenceLevel || '5',
+        emotionsBefore: tradeToEdit.psychology?.emotionsBefore || 'Calm',
+        emotionsAfter: tradeToEdit.psychology?.emotionsAfter || 'Satisfied',
+        notes: tradeToEdit.psychology?.notes || '',
+        mistakes: tradeToEdit.psychology?.mistakes || '',
+        mistakeChecklist: tradeToEdit.psychology?.mistakeChecklist || [],
+        whatIDidWell: tradeToEdit.psychology?.whatIDidWell || '',
+        tags: Array.isArray(tradeToEdit.tags)
+          ? tradeToEdit.tags.join(', ')
+          : tradeToEdit.tags || '',
+        screenshotUpload: null,
+      })
       toast.info('Form reset to original values!')
     } else {
       setFormData(initialFormData)
@@ -246,5 +285,7 @@ export const useTradeFormLogic = (
     handleCheckboxChange,
     handleSubmit,
     handleReset,
+    resetGeneral,
+    resetPsychology,
   }
 }

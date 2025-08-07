@@ -40,7 +40,6 @@ export default function AllTradesClientPage() {
   const closeFormModal = () => {
     setIsFormModalOpen(false)
     setTradeToEdit(null)
-    dispatch(fetchTrades())
   }
 
   const handleAddTrade = async (trade) => {
@@ -101,8 +100,8 @@ export default function AllTradesClientPage() {
       </div>
 
       {isFormModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 p-4">
-          <div className="relative bg-zinc-800 rounded-lg shadow-xl text-white w-full max-w-4xl max-h-[90vh] mx-auto flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80  p-4">
+          <div className="relative bg-red-500 rounded-lg  text-white w-full max-w-4xl max-h-[90vh] mx-auto flex flex-col">
             <NewTradeEntryForm
               addTrade={handleAddTrade}
               updateTrade={handleUpdateTrade}

@@ -8,10 +8,8 @@ export default function PsychologyTabContent({
   tradeToEdit,
 }) {
   return (
-    <div className="space-y-6">
-      <h4 className="text-xl font-semibold text-gray-100">
-        Psychology & Mindset
-      </h4>
+    <div className="space-y-6 mt-1">
+    
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <FormField
           label="Confidence Level (1-10)"
@@ -36,12 +34,11 @@ export default function PsychologyTabContent({
           type="select"
           options={[
             'Calm',
-            'Greedy',
-            'Fearful',
+            'Neutral',
             'Overconfident',
+            'Fearful',
             'Anxious',
             'Excited',
-            'Neutral',
           ]}
           value={formData.emotionsBefore}
           onChange={handleChange}
@@ -51,11 +48,12 @@ export default function PsychologyTabContent({
           id="emotionsAfter"
           type="select"
           options={[
-            'Calm',
-            'Satisfied',
+            'Satisfied (Profit)',
+            'Disappointed (Loss)',
             'Frustrated',
             'Regretful',
-            'Happy',
+            'Excited',
+            'Calm',
             'Angry',
             'Neutral',
           ]}
@@ -68,7 +66,6 @@ export default function PsychologyTabContent({
         Notes / Learnings
       </h4>
       <div className="space-y-4">
-        {/* Corrected field ID from 'tradeNotes' to 'notes' */}
         <FormField
           label="Trade Notes / Journal Entry"
           id="notes"
@@ -93,15 +90,17 @@ export default function PsychologyTabContent({
           </label>
           <div className="flex flex-wrap gap-4">
             {[
-              'No SL',
-              'FOMO',
-              'Overtrade',
-              'Perfect',
+              'No SL (No Stop Loss)',
+              'FOMO (Fear of Missing Out)',
+              'Overtrading',
               'SL Slip',
-              'Ignore R:R',
+              'Ignoring R:R (Risk-to-Reward)',
+              'Revenge Trading',
+              'Not Following Plan',
+              'Impulsive Entry',
+              'Over-leveraging',
               'Greed',
               'Fear',
-              'Not Follow SelfSetup',
             ].map((mistake) => (
               <label
                 key={mistake}
@@ -119,7 +118,6 @@ export default function PsychologyTabContent({
             ))}
           </div>
         </div>
-        {/* Corrected field ID from 'whatDidWell' to 'whatIDidWell' */}
         <FormField
           label="What I Did Well?"
           id="whatIDidWell"

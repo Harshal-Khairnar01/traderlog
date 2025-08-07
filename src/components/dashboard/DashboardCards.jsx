@@ -1,7 +1,7 @@
 import React from 'react'
 import DashboardCard from '@/components/dashboard/DashboardCard'
 
-const DashboardCards = ({
+const PerformanceCards = ({
   highestPnl,
   winRate,
   avgRiskReward,
@@ -9,7 +9,7 @@ const DashboardCards = ({
   timeRange,
 }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <DashboardCard
         title="Highest P&L"
         value={`₹${highestPnl.toLocaleString('en-IN')}`}
@@ -40,4 +40,39 @@ const DashboardCards = ({
   )
 }
 
-export default DashboardCards
+const CapitalAndChargesCards = ({
+  initialCapital,
+  currentCapital,
+  totalCharges,
+  maxDrawdown,
+}) => {
+  const pnl = currentCapital - initialCapital
+  const pnlColor = pnl >= 0 ? 'text-green-400' : 'text-red-400'
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <DashboardCard
+        title="Initial Capital"
+        value={`₹${initialCapital.toLocaleString('en-IN')}`}
+        valueColor="text-cyan-400"
+      />
+      <DashboardCard
+        title="Current Capital"
+        value={`₹${currentCapital.toLocaleString('en-IN')}`}
+        valueColor={pnlColor}
+      />
+      <DashboardCard
+        title="Total Charges"
+        value={`₹${totalCharges.toLocaleString('en-IN')}`}
+        valueColor="text-gray-400"
+      />
+      <DashboardCard
+        title="Max Drawdown"
+        value={`₹${maxDrawdown.toLocaleString('en-IN')}`}
+        valueColor="text-orange-400"
+      />
+    </div>
+  )
+}
+
+export { PerformanceCards, CapitalAndChargesCards }
