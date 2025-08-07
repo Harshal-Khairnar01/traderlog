@@ -1,4 +1,3 @@
-// hooks/useChallengeMetrics.js
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'react-toastify'
 import { useSelector, useDispatch } from 'react-redux'
@@ -280,6 +279,61 @@ export const useChallengeMetrics = () => {
     [calculateAdjustedStartingCapital, parseTradeDateTime, allTradeHistory],
   )
 
+  const applySettingsAndCalculate = useCallback(
+    (settings, trades) => {
+      if (
+        status === 'authenticated' &&
+        session?.user?.initialCapital !== undefined
+      ) {
+        const { challengeStartDate, challengeStartTime, challengeEndDate } =
+          settings
+
+        const challengeStartDateTime =
+          challengeStartDate && challengeStartTime
+            ? new Date(`${challengeStartDate}T${challengeStartTime}:00`)
+            : null
+        const challengeEndDateTime = challengeEndDate
+          ? new Date(`${challengeEndDate}T23:59:59`)
+          : null
+
+        let filteredTrades = trades.filter((trade) => {
+          const tradeDateTime = parseTradeDateTime(trade)
+          return (
+            challengeStartDateTime &&
+            tradeDateTime >= challengeStartDateTime &&
+            challengeEndDateTime &&
+            tradeDateTime <= challengeEndDateTime
+          )
+        })
+
+        filteredTrades = filteredTrades.sort((a, b) => {
+          const dateTimeA = parseTradeDateTime(a)
+          const dateTimeB = parseTradeDateTime(b)
+          return dateTimeB.getTime() - dateTimeA.getTime()
+        })
+
+        setChallengeTradeHistory(filteredTrades)
+
+        setChallengeData(
+          calculateMetrics(
+            filteredTrades,
+            settings,
+            session.user.initialCapital,
+          ),
+        )
+      } else {
+        setChallengeData(null)
+        setChallengeTradeHistory([])
+      }
+    },
+    [
+      status,
+      session?.user?.initialCapital,
+      parseTradeDateTime,
+      calculateMetrics,
+    ],
+  )
+
   useEffect(() => {
     if (status === 'authenticated') {
       dispatch(fetchTrades())
@@ -296,8 +350,7 @@ export const useChallengeMetrics = () => {
     try {
       const storedSettings = localStorage.getItem('challengeSettings')
       if (storedSettings) {
-        const parsedSettings = JSON.parse(storedSettings)
-        currentSettings = { ...currentSettings, ...parsedSettings }
+        currentSettings = { ...currentSettings, ...JSON.parse(storedSettings) }
       }
     } catch (err) {
       console.error('Error loading challenge settings from localStorage:', err)
@@ -307,7 +360,6 @@ export const useChallengeMetrics = () => {
     if (
       status === 'authenticated' &&
       session?.user?.initialCapital !== undefined &&
-      allTradeHistory.length > 0 &&
       currentSettings.challengeStartDate &&
       currentSettings.challengeStartTime
     ) {
@@ -324,73 +376,26 @@ export const useChallengeMetrics = () => {
         ...currentSettings,
         startingCapital: reCalculatedAdjustedStartingCapital,
       }
-    } else if (
-      status === 'authenticated' &&
-      session?.user?.initialCapital === undefined
-    ) {
-      setChallengeData(null)
-      setChallengeTradeHistory([])
-      setChallengeSettings(currentSettings)
-      return
     }
 
     setChallengeSettings(currentSettings)
-
-    if (
-      !loadingTradesFromRedux &&
-      !errorTradesFromRedux &&
-      status === 'authenticated' &&
-      session?.user?.initialCapital !== undefined
-    ) {
-      const { challengeStartDate, challengeStartTime, challengeEndDate } =
-        currentSettings
-
-      const challengeStartDateTime =
-        challengeStartDate && challengeStartTime
-          ? new Date(`${challengeStartDate}T${challengeStartTime}:00`)
-          : null
-      const challengeEndDateTime = challengeEndDate
-        ? new Date(`${challengeEndDate}T23:59:59`)
-        : null
-
-      let filteredTrades = allTradeHistory.filter((trade) => {
-        const tradeDateTime = parseTradeDateTime(trade)
-        return (
-          challengeStartDateTime &&
-          tradeDateTime >= challengeStartDateTime &&
-          challengeEndDateTime &&
-          tradeDateTime <= challengeEndDateTime
-        )
-      })
-
-      filteredTrades = filteredTrades.sort((a, b) => {
-        const dateTimeA = parseTradeDateTime(a)
-        const dateTimeB = parseTradeDateTime(b)
-        return dateTimeB.getTime() - dateTimeA.getTime()
-      })
-
-      setChallengeTradeHistory(filteredTrades)
-
-      setChallengeData(
-        calculateMetrics(
-          filteredTrades,
-          currentSettings,
-          session.user.initialCapital,
-        ),
-      )
-    } else {
-      setChallengeData(null)
-      setChallengeTradeHistory([])
-    }
   }, [
     status,
     session?.user?.initialCapital,
     allTradeHistory,
     calculateAdjustedStartingCapital,
-    calculateMetrics,
+  ])
+
+  useEffect(() => {
+    if (!loadingTradesFromRedux && !errorTradesFromRedux) {
+      applySettingsAndCalculate(challengeSettings, allTradeHistory)
+    }
+  }, [
     loadingTradesFromRedux,
     errorTradesFromRedux,
-    parseTradeDateTime,
+    challengeSettings,
+    allTradeHistory,
+    applySettingsAndCalculate,
   ])
 
   useEffect(() => {

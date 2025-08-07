@@ -1,24 +1,19 @@
-
 import React, { useState, useEffect } from 'react'
 import { toast } from 'react-toastify'
 
 const SetChallengeModal = ({ isOpen, onClose, onSave, initialSettings }) => {
-  const [settings, setSettings] = useState({
-    targetCapital: '',
-    challengeStartDate: '',
-    challengeStartTime: '',
-    challengeEndDate: '',
-  })
+  const [settings, setSettings] = useState(
+    initialSettings || {
+      targetCapital: '',
+      challengeStartDate: '',
+      challengeStartTime: '',
+      challengeEndDate: '',
+    },
+  )
 
   useEffect(() => {
     if (initialSettings) {
-      setSettings((prev) => ({
-        ...prev,
-        targetCapital: initialSettings.targetCapital || '',
-        challengeStartDate: initialSettings.challengeStartDate || '',
-        challengeStartTime: initialSettings.challengeStartTime || '',
-        challengeEndDate: initialSettings.challengeEndDate || '',
-      }))
+      setSettings(initialSettings)
     }
   }, [initialSettings])
 
