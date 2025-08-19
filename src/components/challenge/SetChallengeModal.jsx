@@ -32,8 +32,6 @@ const SetChallengeModal = ({ isOpen, onClose, onSave, initialSettings }) => {
     const challengeStartTime = settings.challengeStartTime
     const challengeEndDate = settings.challengeEndDate
 
-    const currentStartingCapital = initialSettings?.startingCapital
-
     if (isNaN(parsedTargetCapital) || parsedTargetCapital <= 0) {
       toast.error('Please enter a valid Target Capital.')
       return
@@ -91,8 +89,7 @@ const SetChallengeModal = ({ isOpen, onClose, onSave, initialSettings }) => {
               ₹{initialSettings?.startingCapital?.toLocaleString() || 'N/A'}
             </p>
             <p className="text-xs text-gray-400 mt-1">
-              This is your calculated starting capital for the challenge,
-              including P&L before the challenge start.
+              This is your initial starting capital for the challenge.
             </p>
           </div>
 
