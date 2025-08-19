@@ -9,62 +9,62 @@ datasource db {
 }
 
 model User {
-  id              Int              @id @default(autoincrement())
-  firstName       String?
-  lastName        String
-  agreedToTerms   Boolean          @default(false)
-  agreedAt        DateTime?
-  email           String           @unique
-  password        String
-  initialCapital  Float            @default(0)
-  trades          Trade[]
-  capitalLogs     CapitalChange[]
-  createdAt       DateTime         @default(now())
+  id             Int             @id @default(autoincrement())
+  firstName      String?
+  lastName       String
+  agreedToTerms  Boolean         @default(false)
+  agreedAt       DateTime?
+  email          String          @unique
+  password       String
+  initialCapital Float           @default(0)
+  trades         Trade[]
+  challenges     Challenge[]
+  capitalLogs    CapitalChange[]
+  createdAt      DateTime        @default(now())
 }
 
 model Trade {
-  id                     Int        @id @default(autoincrement())
-  userId                 Int
-  marketType             String     
-  symbol                 String     
-  date                   DateTime
-  time                   String?    
-  entryPrice             Float
-  exitPrice              Float
-  quantity               Int
-  totalAmount            Float
-  stopLoss               Float
-  target                 Float
-  tradeType              String     
-  direction              String     
-  grossPnl               Float
-  netPnl                 Float
-  pnlPercentage          Float
-  optionType             String?
-  riskReward             Float
-  charges                Float?
-  strategyUsed           String?
-  outcomeSummary         String?
-  tradeAnalysis          String?
-  tags                   String[]   @default([])
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  marketType     String
+  symbol         String
+  date           DateTime
+  time           String?
+  entryPrice     Float
+  exitPrice      Float
+  quantity       Int
+  totalAmount    Float
+  stopLoss       Float
+  target         Float
+  tradeType      String
+  direction      String
+  grossPnl       Float
+  netPnl         Float
+  pnlPercentage  Float
+  optionType     String?
+  riskReward     Float
+  charges        Float?
+  strategyUsed   String?
+  outcomeSummary String?
+  tradeAnalysis  String?
+  tags           String[] @default([])
 
-  // Optional Psychology Entry
-  psychology             Psychology?
+  psychology Psychology?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Psychology {
-  id               Int        @id @default(autoincrement())
-  tradeId          Int        @unique
-  confidenceLevel  Int        // 1-10
+  id               Int      @id @default(autoincrement())
+  tradeId          Int      @unique
+  confidenceLevel  Int
   emotionsBefore   String?
   emotionsAfter    String?
-  notes            String?    // Trade notes / journal
-  mistakes         String?    // What went wrong
-  mistakeChecklist String[]   @default([])
-  whatIDidWell     String?    // Positive actions
-  tags             String[]   @default([])
+  notes            String?
+  mistakes         String?
+  mistakeChecklist String[] @default([])
+  whatIDidWell     String?
+  tags             String[] @default([])
   screenshotUrl    String?
 
   trade Trade @relation(fields: [tradeId], references: [id], onDelete: Cascade)
@@ -78,4 +78,26 @@ model CapitalChange {
   date   DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum ChallengeStatus {
+  ACTIVE
+  COMPLETED
+  EXPIRED
+  CANCELLED
+}
+
+model Challenge {
+  id                 Int             @id @default(autoincrement())
+  userId             Int
+  startingCapital    Float
+  targetCapital      Float
+  challengeStartDate DateTime
+  challengeEndDate   DateTime
+  challengeStartTime String?
+  status             ChallengeStatus @default(ACTIVE)
+  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
 }

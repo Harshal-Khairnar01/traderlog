@@ -59,19 +59,13 @@ export const useChallengeMetrics = () => {
 
   const calculateMetrics = useCallback(
     (tradesForChallenge, settings, initialUserCapital) => {
-      const {
-        targetCapital,
-        challengeStartDate,
-        challengeStartTime,
-        challengeEndDate,
-      } = settings
-
+      const { targetCapital, challengeStartDate, challengeEndDate } = settings
       const challengeStartDateTime =
-        challengeStartDate && challengeStartTime
-          ? new Date(`${challengeStartDate}T${challengeStartTime}:00`)
+        challengeStartDate && settings.challengeStartTime
+          ? new Date(`${challengeStartDate}T${settings.challengeStartTime}:00`)
           : null
       const challengeEndDateTime = challengeEndDate
-        ? new Date(`${challengeEndDate}T23:59:59`)
+        ? new Date(challengeEndDate)
         : null
 
       const actualChallengeStartingCapital = calculateAdjustedStartingCapital(
@@ -288,12 +282,11 @@ export const useChallengeMetrics = () => {
         const { challengeStartDate, challengeStartTime, challengeEndDate } =
           settings
 
-        const challengeStartDateTime =
-          challengeStartDate && challengeStartTime
-            ? new Date(`${challengeStartDate}T${challengeStartTime}:00`)
-            : null
+        const challengeStartDateTime = challengeStartDate
+          ? new Date(`${challengeStartDate}T${challengeStartTime}:00`)
+          : null
         const challengeEndDateTime = challengeEndDate
-          ? new Date(`${challengeEndDate}T23:59:59`)
+          ? new Date(challengeEndDate)
           : null
 
         let filteredTrades = trades.filter((trade) => {
@@ -334,57 +327,41 @@ export const useChallengeMetrics = () => {
     ],
   )
 
+  const fetchChallenge = useCallback(async () => {
+    try {
+      const res = await fetch('/api/challenge')
+      if (res.ok) {
+        const data = await res.json()
+        if (data) {
+          const mappedSettings = {
+            ...data,
+            challengeStartDate: data.challengeStartDate.split('T')[0],
+            challengeStartTime: data.challengeStartTime,
+            challengeEndDate: data.challengeEndDate.split('T')[0],
+          }
+          setChallengeSettings(mappedSettings)
+        } else {
+          setChallengeSettings(DEFAULT_CHALLENGE_SETTINGS)
+        }
+      } else {
+        setChallengeSettings(DEFAULT_CHALLENGE_SETTINGS)
+      }
+    } catch (err) {
+      console.error('Failed to fetch challenge from API:', err)
+      toast.error('Failed to fetch challenge settings.')
+    }
+  }, [])
+
   useEffect(() => {
     if (status === 'authenticated') {
+      fetchChallenge()
       dispatch(fetchTrades())
     } else if (status === 'unauthenticated') {
-      localStorage.removeItem('challengeSettings')
       setChallengeSettings(DEFAULT_CHALLENGE_SETTINGS)
       setChallengeData(null)
       setChallengeTradeHistory([])
     }
-  }, [status, dispatch])
-
-  useEffect(() => {
-    let currentSettings = { ...DEFAULT_CHALLENGE_SETTINGS }
-    try {
-      const storedSettings = localStorage.getItem('challengeSettings')
-      if (storedSettings) {
-        currentSettings = { ...currentSettings, ...JSON.parse(storedSettings) }
-      }
-    } catch (err) {
-      console.error('Error loading challenge settings from localStorage:', err)
-      toast.error('Failed to load challenge settings from local storage.')
-    }
-
-    if (
-      status === 'authenticated' &&
-      session?.user?.initialCapital !== undefined &&
-      currentSettings.challengeStartDate &&
-      currentSettings.challengeStartTime
-    ) {
-      const challengeStartDateTime = new Date(
-        `${currentSettings.challengeStartDate}T${currentSettings.challengeStartTime}:00`,
-      )
-      const reCalculatedAdjustedStartingCapital =
-        calculateAdjustedStartingCapital(
-          session.user.initialCapital,
-          allTradeHistory,
-          challengeStartDateTime,
-        )
-      currentSettings = {
-        ...currentSettings,
-        startingCapital: reCalculatedAdjustedStartingCapital,
-      }
-    }
-
-    setChallengeSettings(currentSettings)
-  }, [
-    status,
-    session?.user?.initialCapital,
-    allTradeHistory,
-    calculateAdjustedStartingCapital,
-  ])
+  }, [status, dispatch, fetchChallenge])
 
   useEffect(() => {
     if (!loadingTradesFromRedux && !errorTradesFromRedux) {
@@ -406,11 +383,9 @@ export const useChallengeMetrics = () => {
       const now = new Date()
       if (challengeEnd < now) {
         toast.info('Your challenge has ended! Setting up for a new one.')
-        localStorage.removeItem('challengeSettings')
         setChallengeSettings({
           ...DEFAULT_CHALLENGE_SETTINGS,
           startingCapital: session?.user?.initialCapital ?? 0,
-          challengeEndDate: '',
         })
         setChallengeData(null)
         setChallengeTradeHistory([])
@@ -419,7 +394,7 @@ export const useChallengeMetrics = () => {
   }, [challengeSettings.challengeEndDate, session?.user?.initialCapital])
 
   const handleSaveChallengeSettings = useCallback(
-    (newSettings) => {
+    async (newSettings) => {
       try {
         const initialUserCapital = session?.user?.initialCapital ?? 0
         const newChallengeStartDateTime =
@@ -436,22 +411,47 @@ export const useChallengeMetrics = () => {
         )
 
         const settingsToSave = {
-          targetCapital: newSettings.targetCapital,
-          challengeStartDate: newSettings.challengeStartDate,
-          challengeStartTime: newSettings.challengeStartTime,
-          challengeEndDate: newSettings.challengeEndDate,
+          ...newSettings,
           startingCapital: adjustedStartingCapital,
         }
 
-        localStorage.setItem(
-          'challengeSettings',
-          JSON.stringify(settingsToSave),
-        )
+        let res
+        let method
+        let url = '/api/challenge'
 
-        setChallengeSettings(settingsToSave)
-        toast.success('Challenge settings saved!')
+        if (challengeSettings.id) {
+          method = 'PUT'
+          url = `${url}/${challengeSettings.id}`
+          res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(settingsToSave),
+          })
+        } else {
+          method = 'POST'
+          res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(settingsToSave),
+          })
+        }
+
+        if (res.ok) {
+          const data = await res.json()
+          const mappedData = {
+            ...data.challenge,
+            challengeStartDate: data.challenge.challengeStartDate.split('T')[0],
+            challengeStartTime: data.challenge.challengeStartTime,
+            challengeEndDate: data.challenge.challengeEndDate.split('T')[0],
+          }
+          setChallengeSettings(mappedData)
+          toast.success('Challenge settings saved!')
+        } else {
+          const errorData = await res.json()
+          toast.error(errorData.message || 'Failed to save challenge settings.')
+        }
       } catch (err) {
-        console.error('Error saving challenge settings to localStorage:', err)
+        console.error('Error saving challenge settings:', err)
         toast.error('Failed to save challenge settings.')
       }
     },
@@ -459,6 +459,7 @@ export const useChallengeMetrics = () => {
       session?.user?.initialCapital,
       allTradeHistory,
       calculateAdjustedStartingCapital,
+      challengeSettings.id,
     ],
   )
 
@@ -469,5 +470,6 @@ export const useChallengeMetrics = () => {
     error,
     challengeSettings,
     handleSaveChallengeSettings,
+    refreshChallengeData: fetchChallenge,
   }
 }
