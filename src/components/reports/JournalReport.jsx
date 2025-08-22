@@ -1,4 +1,4 @@
-// components/JournalReport.jsx
+
 "use client";
 
 import React from 'react';
@@ -22,7 +22,6 @@ const JournalReport = ({ tradeHistory }) => {
   return (
     <div className="p-4 space-y-8">
       
-      {/* Actionable Insights: Mistakes & Successes */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <MetricCard
           title="Top 5 Mistakes"
@@ -54,7 +53,6 @@ const JournalReport = ({ tradeHistory }) => {
         />
       </div>
 
-      {/* Setup Performance */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <MetricCard
           title="Most Used Setup"
@@ -74,7 +72,6 @@ const JournalReport = ({ tradeHistory }) => {
         />
       </div>
 
-      {/* Trader's Emotional State Summary */}
       <div className="grid grid-cols-1 gap-6">
         <MetricCard
           title="Overall Emotional Sentiment"
