@@ -1,6 +1,8 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import Link from 'next/link'
 import { signOut } from 'next-auth/react'
+import { useSelector } from 'react-redux'
+import { format, getMonth, getYear, parseISO } from 'date-fns'
 
 const DashboardHeader = ({
   userInitial,
@@ -12,6 +14,33 @@ const DashboardHeader = ({
   timeRange,
   setTimeRange,
 }) => {
+  const { tradeHistory } = useSelector((state) => state.trades)
+  const uniqueMonthsAndYears = useMemo(() => {
+    const dateSet = new Set()
+    tradeHistory.forEach((trade) => {
+      const tradeDate = parseISO(trade.date)
+      if (tradeDate && !isNaN(tradeDate)) {
+        const year = getYear(tradeDate)
+        const month = getMonth(tradeDate)
+        dateSet.add(`${year}-${month}`)
+      }
+    })
+    return Array.from(dateSet)
+      .sort((a, b) => {
+        const [yearA, monthA] = a.split('-').map(Number)
+        const [yearB, monthB] = b.split('-').map(Number)
+        if (yearA !== yearB) return yearB - yearA
+        return monthB - monthA
+      })
+      .map((dateStr) => {
+        const [year, month] = dateStr.split('-').map(Number)
+        return {
+          value: dateStr,
+          label: `${format(new Date(year, month, 1), 'MMMM yyyy')}`,
+        }
+      })
+  }, [tradeHistory])
+
   return (
     <div className="w-full max-w-7xl flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
       <div className="w-full sm:w-auto flex justify-between items-center">
@@ -23,6 +52,11 @@ const DashboardHeader = ({
           <option value="alltime">All Time</option>
           <option value="30days">Last 30 Days</option>
           <option value="7days">Last 7 Days</option>
+          {uniqueMonthsAndYears.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}{' '}
+            </option>
+          ))}
         </select>
       </div>
       <div
