@@ -1,5 +1,14 @@
 import { useMemo } from 'react'
-import { parseISO, isValid, subDays, isWithinInterval } from 'date-fns'
+import {
+  parseISO,
+  isValid,
+  subDays,
+  isWithinInterval,
+  getYear,
+  getMonth,
+  startOfMonth,
+  endOfMonth,
+} from 'date-fns'
 
 export const useTradeCalculations = (
   tradeHistory,
@@ -7,29 +16,41 @@ export const useTradeCalculations = (
   initialCapital,
 ) => {
   const currentInterval = useMemo(() => {
+    const now = new Date()
+
     if (timeRange === 'alltime') {
       return null
-    }
-    const now = new Date()
-    let start = now
-    if (timeRange === '7days') {
-      start = subDays(now, 7)
+    } else if (timeRange === '7days') {
+      return { start: subDays(now, 7), end: now }
+    } else if (timeRange === '30days') {
+      return { start: subDays(now, 30), end: now }
     } else {
-      start = subDays(now, 30)
+      const [year, month] = timeRange.split('-').map(Number)
+      if (year && month !== undefined) {
+        const startDate = startOfMonth(new Date(year, month))
+        const endDate = endOfMonth(new Date(year, month))
+        return { start: startDate, end: endDate }
+      }
+      return null
     }
-    return { start, end: now }
   }, [timeRange])
 
-  const currentPeriodTrades = useMemo(() => {
-    if (timeRange === 'alltime') {
-      return tradeHistory
-    }
+ const currentPeriodTrades = useMemo(() => {
+   if (!currentInterval) {
+     return tradeHistory
+   }
 
-    return tradeHistory.filter((trade) => {
-      const tradeDate = parseISO(trade.date)
-      return isValid(tradeDate) && isWithinInterval(tradeDate, currentInterval)
-    })
-  }, [tradeHistory, currentInterval, timeRange])
+   return tradeHistory.filter((trade) => {
+     const tradeDate = parseISO(trade.date)
+     return (
+       isValid(tradeDate) &&
+       isWithinInterval(tradeDate, {
+         start: currentInterval.start,
+         end: currentInterval.end,
+       })
+     )
+   })
+ }, [tradeHistory, currentInterval])
 
   const tradesCount = currentPeriodTrades.length
 
@@ -77,44 +98,43 @@ export const useTradeCalculations = (
     )
   }, [currentPeriodTrades])
 
-  const currentCapital = useMemo(() => {
-    if (tradeHistory.length === 0) return initialCapital
-    const totalPnl = tradeHistory.reduce(
-      (sum, trade) => sum + (trade.netPnl || 0),
-      0,
-    )
-    return initialCapital + totalPnl
-  }, [tradeHistory, initialCapital])
+   const currentCapital = useMemo(() => {
+     if (tradeHistory.length === 0) return initialCapital
+     const totalPnl = tradeHistory.reduce(
+       (sum, trade) => sum + (trade.netPnl || 0),
+       0,
+     )
+     return initialCapital + totalPnl
+   }, [tradeHistory, initialCapital])
 
-  const maxDrawdown = useMemo(() => {
-    if (currentPeriodTrades.length === 0) return 0
+const maxDrawdown = useMemo(() => {
+  if (tradeHistory.length === 0) return 0 // ... logic for max drawdown on *full* trade history
+  let peakCapital = initialCapital
+  let maxDD = 0
+  let currentCapitalValue = initialCapital
 
-    let peakCapital = initialCapital
-    let maxDD = 0
-    let currentCapitalValue = initialCapital
+  const sortedTrades = [...tradeHistory].sort((a, b) => {
+    const dateTimeA = parseISO(`${a.date.split('T')[0]}T${a.time}:00.000Z`)
+    const dateTimeB = parseISO(`${b.date.split('T')[0]}T${b.time}:00.000Z`)
+    if (!isValid(dateTimeA) && !isValid(dateTimeB)) return 0
+    if (!isValid(dateTimeA)) return 1
+    if (!isValid(dateTimeB)) return -1
+    return dateTimeA.getTime() - dateTimeB.getTime()
+  })
 
-    const sortedTrades = [...currentPeriodTrades].sort((a, b) => {
-      const dateTimeA = parseISO(`${a.date.split('T')[0]}T${a.time}:00.000Z`)
-      const dateTimeB = parseISO(`${b.date.split('T')[0]}T${b.time}:00.000Z`)
-      if (!isValid(dateTimeA) && !isValid(dateTimeB)) return 0
-      if (!isValid(dateTimeA)) return 1
-      if (!isValid(dateTimeB)) return -1
-      return dateTimeA.getTime() - dateTimeB.getTime()
-    })
+  sortedTrades.forEach((trade) => {
+    currentCapitalValue += trade.netPnl || 0
+    if (currentCapitalValue > peakCapital) {
+      peakCapital = currentCapitalValue
+    }
+    const drawdown = peakCapital - currentCapitalValue
+    if (drawdown > maxDD) {
+      maxDD = drawdown
+    }
+  })
 
-    sortedTrades.forEach((trade) => {
-      currentCapitalValue += trade.netPnl || 0
-      if (currentCapitalValue > peakCapital) {
-        peakCapital = currentCapitalValue
-      }
-      const drawdown = peakCapital - currentCapitalValue
-      if (drawdown > maxDD) {
-        maxDD = drawdown
-      }
-    })
-
-    return maxDD
-  }, [currentPeriodTrades, initialCapital])
+  return maxDD
+}, [tradeHistory, initialCapital])
 
   const cumulativePnlData = useMemo(() => {
     if (currentPeriodTrades.length === 0) return []
